@@ -109,3 +109,44 @@ void FreeFormDeform::set_edge_spans(int size_x, int size_y, int size_z) {
     _lattice->set_edge_spans(size_x, size_y, size_y);
 }
 
+void FreeFormDeform::handle_click(const Event* event, void* args) {
+    ClickerArgs* c_args = (ClickerArgs*)args;
+
+    PT(MouseWatcher) mouse = c_args->mouse;
+    FreeFormDeform*ffd = c_args->ffd;
+    WindowFramework *window = c_args->window;
+
+    if (!mouse->has_mouse()) {
+        return;
+    }
+
+    Camera *camera = window->get_camera(0);
+    ffd->_collision_ray->set_from_lens(camera, mouse->get_mouse().get_x(), mouse->get_mouse().get_y());
+
+    NodePath render = window->get_render();
+    ffd->_traverser->traverse(render);
+    std::cout << ffd->_handler_queue->get_num_entries() << "\n";
+}
+
+void FreeFormDeform::setup_clicker(Camera *camera, PandaFramework &framework, WindowFramework &window) {
+   _traverser = new CollisionTraverser("FFD_Traverser");
+
+    PT(CollisionNode) collision_node = new CollisionNode("mouse_ray");
+    collision_node->set_from_collide_mask(GeomNode::get_default_collide_mask());
+
+    NodePath picker_node = window.get_camera_group().attach_new_node(collision_node);
+    picker_node.show();
+
+    _collision_ray = new CollisionRay();
+    collision_node->add_solid(_collision_ray);
+
+    _handler_queue = new CollisionHandlerQueue();
+    _traverser->add_collider(picker_node, _handler_queue);
+
+    NodePath mouse = window.get_mouse();
+    PT(MouseWatcher) mouse_ptr = DCAST(MouseWatcher, mouse.node());
+
+    ClickerArgs *c_args = new ClickerArgs{ mouse_ptr, &window, this };
+
+    framework.define_key("mouse1", "description", handle_click, c_args);
+}
