@@ -1,0 +1,9 @@
+.vs/
+free*/
+x64/
+
+*.sln
+*.vcxproj*
+*.pdb
+*.obj
+*.idb
