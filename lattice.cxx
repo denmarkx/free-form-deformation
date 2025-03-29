@@ -19,10 +19,11 @@ void Lattice::create_control_points() {
         for (size_t j = 0; j <= _plane_spans[1]; j++) {
             for (size_t k = 0; k <= _plane_spans[2]; k++) {
                 point = LPoint3f(
-                    ((double)i / _plane_spans[0]) * _lattice_vecs[0][0],
-                    ((double)k / _plane_spans[2]) * _lattice_vecs[2][1],
-                    ((double)j / _plane_spans[1]) * _lattice_vecs[1][2]
+                    _x0[0] + ((double)i / _plane_spans[0]) * _lattice_vecs[0][0],
+                    _x0[1] + ((double)k / _plane_spans[2]) * _lattice_vecs[2][1],
+                    _x0[2] + ((double)j / _plane_spans[1]) * _lattice_vecs[1][2]
                 );
+
                 create_point(point);
             }
         }

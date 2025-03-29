@@ -32,7 +32,8 @@ private:
 
     int factorial(int n);
     int binomial_coeff(int n, int k);
-    int bernstein(int v, int n, int x);
+    double bernstein(double v, double n, double x);
+    LPoint3f point_at_axis(double axis_value, LPoint3f point, LVector3f vector, int axis);
 
     NodePath _np;
     NodePath _render;
@@ -46,6 +47,7 @@ private:
     
     PT(AsyncTaskManager) _task_mgr = AsyncTaskManager::get_global_ptr();
 
+    pvector<LPoint3f> _default_vertices;
     pvector<GeomNode*> _geom_nodes;
     pvector<int> _selected_points;
 };

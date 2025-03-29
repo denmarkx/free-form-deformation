@@ -21,7 +21,7 @@ int FreeFormDeform::binomial_coeff(int n, int k) {
     return factorial(n) / (factorial(k) * factorial(n - k));
 }
 
-int FreeFormDeform::bernstein(int v, int n, int x) {
+double FreeFormDeform::bernstein(double v, double n, double x) {
     return binomial_coeff(n, v) * pow(x, v) * pow(1 - x, n - v);
 }
 
@@ -31,8 +31,6 @@ void FreeFormDeform::transform_vertex(GeomVertexData* data) {
     LPoint3f vertex;
     LPoint3f vertex_minus_min;
 
-    _lattice->calculate_lattice_vec();
-
     pvector<LVector3f> lattice_vecs = _lattice->get_lattice_vecs();
     LVector3f S = lattice_vecs[0];
     LVector3f T = lattice_vecs[1];
@@ -40,22 +38,27 @@ void FreeFormDeform::transform_vertex(GeomVertexData* data) {
 
     LVector3f x_ffd;
 
+    int i = 0;
     while (!rewriter.is_at_end()) {
-        vertex = rewriter.get_data3f();
+        vertex = _default_vertices[i];
         vertex_minus_min = vertex - _lattice->get_x0();
         
         double s = (T.cross(U).dot(vertex_minus_min)) / T.cross(U).dot(S);
         double t = (S.cross(U).dot(vertex_minus_min)) / S.cross(U).dot(T);
         double u = (S.cross(T).dot(vertex_minus_min)) / S.cross(T).dot(U);
         x_ffd = deform_vertex(s, t, u);
+
+        // Rewrite:
         rewriter.set_data3f(x_ffd);
+
+        i++;
     }
 }
 
 LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
     pvector<int> spans = _lattice->get_edge_spans();
 
-    int bernstein_coeff;
+    double bernstein_coeff;
     int p_index = 0;
 
     LVector3f vec_i = LVector3f(0);
@@ -67,9 +70,6 @@ LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
                 bernstein_coeff = bernstein(k, spans[2], u);
 
                 LPoint3f p_ijk = _lattice->get_control_point_pos(p_index);
-                if (p_index == 0) {
-                    std::cout << "0: " << p_ijk << "\n";
-                }
                 vec_k += bernstein_coeff * p_ijk;
 
                 p_index++;
@@ -80,6 +80,7 @@ LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
         bernstein_coeff = bernstein(i, spans[0], s);
         vec_i += bernstein_coeff * vec_j;
     }
+
     return vec_i;
 }
 
@@ -100,10 +101,29 @@ void FreeFormDeform::update_vertices() {
 
 void FreeFormDeform::process_node() {
     NodePathCollection collection = _np.find_all_matches("**/+GeomNode");
+    _lattice->calculate_lattice_vec();
+
+    GeomVertexReader v_reader;
+    LPoint3f vertex;
+
+    CPT(GeomVertexData) vertex_data;
     PT(GeomNode) geom_node;
+    CPT(Geom) geom;
 
     for (size_t i = 0; i < collection.get_num_paths(); i++) {
         geom_node = DCAST(GeomNode, collection.get_path(i).node());
+        for (size_t j = 0; j < geom_node->get_num_geoms(); j++) {
+            geom = geom_node->get_geom(j);
+            vertex_data = geom->get_vertex_data();
+
+            // Store our unmodified points:
+            v_reader = GeomVertexReader(vertex_data, "vertex");
+
+            while (!v_reader.is_at_end()) {
+                vertex = v_reader.get_data3f();
+                _default_vertices.push_back(vertex);
+            }
+        }
         _geom_nodes.push_back(geom_node);
     }
 }
@@ -112,6 +132,11 @@ void FreeFormDeform::set_edge_spans(int size_x, int size_y, int size_z) {
     _lattice->set_edge_spans(size_x, size_y, size_y);
 }
 
+LPoint3f FreeFormDeform::point_at_axis(double axis_value, LPoint3f point, LVector3f vector, int axis) {
+    return point + vector * ((axis_value - point[axis]) / vector[axis]);
+}
+
+static bool test4 = 0;
 AsyncTask::DoneStatus FreeFormDeform::drag_task(GenericAsyncTask* task, void* args) {
     ClickerArgs* c_args = (ClickerArgs*)args;
 
@@ -134,17 +159,16 @@ AsyncTask::DoneStatus FreeFormDeform::drag_task(GenericAsyncTask* task, void* ar
     NodePath render = window->get_render();
     NodePath camera_np = window->get_camera_group();
 
-    LPoint3f near_point;
-    LVector3f near_vector;
+    LPoint3f near_point = render.get_relative_point(camera_np, ffd->_collision_ray->get_origin());
+    LVector3f near_vector = render.get_relative_vector(camera_np, ffd->_collision_ray->get_direction());
 
-    near_point = render.get_relative_point(camera_np, ffd->_collision_ray->get_origin());
-    near_vector = render.get_relative_vector(camera_np, ffd->_collision_ray->get_direction());
-
+    // XXX: temporarily forced to Y assuming looking at XZ (default)
     int index = ffd->_selected_points[0];
-    ffd->_lattice->set_control_point_pos(near_point, index);
+    LPoint3f point = ffd->_lattice->get_control_point_pos(index);
+
+    ffd->_lattice->set_control_point_pos(ffd->point_at_axis(.5, near_point, near_vector, 1), index);
 
     ffd->update_vertices();
-
     return AsyncTask::DS_cont;
 }
 
@@ -221,4 +245,6 @@ void FreeFormDeform::setup_clicker(Camera *camera, PandaFramework &framework, Wi
     // Dragging Task:
     PT(GenericAsyncTask) task = new GenericAsyncTask("MyTaskName", &drag_task, c_args);
     _task_mgr->add(task);
+
+    //window.set_wireframe(1, 1);
 }

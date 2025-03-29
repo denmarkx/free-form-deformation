@@ -25,7 +25,7 @@ private:
 
     pvector<NodePath> _control_points; // P(ijk)
     pvector<LVector3f> _lattice_vecs; // STU
-    pvector<int> _plane_spans = { 1, 2, 2 }; // lnm
+    pvector<int> _plane_spans = { 1, 2, 3 }; // lnm
 
     LPoint3f _x0, _x1;
 
