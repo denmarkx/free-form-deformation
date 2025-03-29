@@ -47,7 +47,8 @@ private:
     
     PT(AsyncTaskManager) _task_mgr = AsyncTaskManager::get_global_ptr();
 
-    pvector<LPoint3f> _default_vertices;
+    pvector<pvector<LPoint3f>> _default_vertex_ws_os; // Default vertex, default object space vertex.
+
     pvector<GeomNode*> _geom_nodes;
     pvector<int> _selected_points;
 };

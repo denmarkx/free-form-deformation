@@ -28,28 +28,26 @@ double FreeFormDeform::bernstein(double v, double n, double x) {
 void FreeFormDeform::transform_vertex(GeomVertexData* data) {
     GeomVertexRewriter rewriter(data, "vertex");
 
-    LPoint3f vertex;
-    LPoint3f vertex_minus_min;
-
-    pvector<LVector3f> lattice_vecs = _lattice->get_lattice_vecs();
-    LVector3f S = lattice_vecs[0];
-    LVector3f T = lattice_vecs[1];
-    LVector3f U = lattice_vecs[2];
+    LPoint3f default_vertex, default_object_space; // (stu)
 
     LVector3f x_ffd;
 
     int i = 0;
     while (!rewriter.is_at_end()) {
-        vertex = _default_vertices[i];
-        vertex_minus_min = vertex - _lattice->get_x0();
-        
-        double s = (T.cross(U).dot(vertex_minus_min)) / T.cross(U).dot(S);
-        double t = (S.cross(U).dot(vertex_minus_min)) / S.cross(U).dot(T);
-        double u = (S.cross(T).dot(vertex_minus_min)) / S.cross(T).dot(U);
+        default_vertex = _default_vertex_ws_os[i][0];
+        double s = _default_vertex_ws_os[i][1][0];
+        double t = _default_vertex_ws_os[i][1][1];
+        double u = _default_vertex_ws_os[i][1][2];
         x_ffd = deform_vertex(s, t, u);
 
-        // Rewrite:
-        rewriter.set_data3f(x_ffd);
+        // Ignore rewriting if we moved a neglible amount.
+        if (!default_vertex.almost_equal(x_ffd, 0.01)) {
+            rewriter.set_data3f(x_ffd);
+        }
+        else {
+            //std::cout << "ignoring " << i << "\n";
+            rewriter.set_data3f(default_vertex);
+        }
 
         i++;
     }
@@ -100,11 +98,19 @@ void FreeFormDeform::update_vertices() {
 }
 
 void FreeFormDeform::process_node() {
-    NodePathCollection collection = _np.find_all_matches("**/+GeomNode");
     _lattice->calculate_lattice_vec();
 
+    NodePathCollection collection = _np.find_all_matches("**/+GeomNode");
+
+    pvector<LVector3f> lattice_vec = _lattice->get_lattice_vecs();
+    LVector3f S = lattice_vec[0];
+    LVector3f T = lattice_vec[1];
+    LVector3f U = lattice_vec[2];
+
     GeomVertexReader v_reader;
-    LPoint3f vertex;
+    LPoint3f vertex, vertex_minus_min;
+
+    pvector<LPoint3f> vertex_object_space;
 
     CPT(GeomVertexData) vertex_data;
     PT(GeomNode) geom_node;
@@ -120,8 +126,18 @@ void FreeFormDeform::process_node() {
             v_reader = GeomVertexReader(vertex_data, "vertex");
 
             while (!v_reader.is_at_end()) {
+                vertex_object_space.clear();
                 vertex = v_reader.get_data3f();
-                _default_vertices.push_back(vertex);
+
+                vertex_minus_min = vertex - _lattice->get_x0();
+
+                double s = (T.cross(U).dot(vertex_minus_min)) / T.cross(U).dot(S);
+                double t = (S.cross(U).dot(vertex_minus_min)) / S.cross(U).dot(T);
+                double u = (S.cross(T).dot(vertex_minus_min)) / S.cross(T).dot(U);
+
+                vertex_object_space.push_back(vertex);
+                vertex_object_space.push_back(LPoint3f(s, t, u));
+                _default_vertex_ws_os.push_back(vertex_object_space);
             }
         }
         _geom_nodes.push_back(geom_node);
@@ -136,7 +152,6 @@ LPoint3f FreeFormDeform::point_at_axis(double axis_value, LPoint3f point, LVecto
     return point + vector * ((axis_value - point[axis]) / vector[axis]);
 }
 
-static bool test4 = 0;
 AsyncTask::DoneStatus FreeFormDeform::drag_task(GenericAsyncTask* task, void* args) {
     ClickerArgs* c_args = (ClickerArgs*)args;
 
