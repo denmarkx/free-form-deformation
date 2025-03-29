@@ -67,6 +67,9 @@ LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
                 bernstein_coeff = bernstein(k, spans[2], u);
 
                 LPoint3f p_ijk = _lattice->get_control_point_pos(p_index);
+                if (p_index == 0) {
+                    std::cout << "0: " << p_ijk << "\n";
+                }
                 vec_k += bernstein_coeff * p_ijk;
 
                 p_index++;
@@ -109,6 +112,42 @@ void FreeFormDeform::set_edge_spans(int size_x, int size_y, int size_z) {
     _lattice->set_edge_spans(size_x, size_y, size_y);
 }
 
+AsyncTask::DoneStatus FreeFormDeform::drag_task(GenericAsyncTask* task, void* args) {
+    ClickerArgs* c_args = (ClickerArgs*)args;
+
+    PT(MouseWatcher) mouse = c_args->mouse;
+    FreeFormDeform* ffd = c_args->ffd;
+    WindowFramework* window = c_args->window;
+
+    // TODO: checck if dragging?>
+
+    // Ignore if mouse is out of bounds:
+    if (!mouse->has_mouse()) {
+        return AsyncTask::DS_again;
+    }
+    
+    // Ignore if there's nothing selected.
+    if (ffd->_selected_points.size() == 0) {
+        return AsyncTask::DS_again;
+    }
+
+    NodePath render = window->get_render();
+    NodePath camera_np = window->get_camera_group();
+
+    LPoint3f near_point;
+    LVector3f near_vector;
+
+    near_point = render.get_relative_point(camera_np, ffd->_collision_ray->get_origin());
+    near_vector = render.get_relative_vector(camera_np, ffd->_collision_ray->get_direction());
+
+    int index = ffd->_selected_points[0];
+    ffd->_lattice->set_control_point_pos(near_point, index);
+
+    ffd->update_vertices();
+
+    return AsyncTask::DS_cont;
+}
+
 void FreeFormDeform::handle_click(const Event* event, void* args) {
     ClickerArgs* c_args = (ClickerArgs*)args;
 
@@ -125,7 +164,36 @@ void FreeFormDeform::handle_click(const Event* event, void* args) {
 
     NodePath render = window->get_render();
     ffd->_traverser->traverse(render);
-    std::cout << ffd->_handler_queue->get_num_entries() << "\n";
+    ffd->_handler_queue->sort_entries();
+
+    if (ffd->_handler_queue->get_num_entries() == 0) {
+        return;
+    }
+
+    NodePath into_node = ffd->_handler_queue->get_entry(0)->get_into_node_path();
+
+    if (!into_node.has_net_tag("control_point")) {
+        return;
+    }
+
+    int point_index = atoi(into_node.get_net_tag("control_point").c_str());
+    
+    pvector<int>::iterator it;
+    it = std::find(ffd->_selected_points.begin(), ffd->_selected_points.end(), point_index);
+
+    size_t i;
+    if (it != ffd->_selected_points.end()) {
+        i = std::distance(ffd->_selected_points.begin(), it);
+
+        // Deselect:
+        ffd->_selected_points.erase(ffd->_selected_points.begin() + i);
+        into_node.clear_color();
+        return;
+    }
+
+    // Select:
+    ffd->_selected_points.push_back(point_index);
+    into_node.set_color(0, 1, 0, 1);
 }
 
 void FreeFormDeform::setup_clicker(Camera *camera, PandaFramework &framework, WindowFramework &window) {
@@ -146,7 +214,11 @@ void FreeFormDeform::setup_clicker(Camera *camera, PandaFramework &framework, Wi
     NodePath mouse = window.get_mouse();
     PT(MouseWatcher) mouse_ptr = DCAST(MouseWatcher, mouse.node());
 
+    // Click mouse1 Event:
     ClickerArgs *c_args = new ClickerArgs{ mouse_ptr, &window, this };
-
     framework.define_key("mouse1", "description", handle_click, c_args);
+
+    // Dragging Task:
+    PT(GenericAsyncTask) task = new GenericAsyncTask("MyTaskName", &drag_task, c_args);
+    _task_mgr->add(task);
 }

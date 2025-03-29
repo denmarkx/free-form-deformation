@@ -9,8 +9,9 @@ public:
     void calculate_lattice_vec();
 
     void set_edge_spans(int size_x, int size_y, int size_z);
-    pvector<int> get_edge_spans();
+    void set_control_point_pos(LPoint3f pos, int index);
 
+    pvector<int> get_edge_spans();
     pvector<LVector3f> get_lattice_vecs();
     LPoint3f get_control_point_pos(int i);
     LPoint3f get_x0();
@@ -24,7 +25,7 @@ private:
 
     pvector<NodePath> _control_points; // P(ijk)
     pvector<LVector3f> _lattice_vecs; // STU
-    pvector<int> _plane_spans = { 2, 3, 4 }; // lnm
+    pvector<int> _plane_spans = { 1, 2, 2 }; // lnm
 
     LPoint3f _x0, _x1;
 

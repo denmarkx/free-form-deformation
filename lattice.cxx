@@ -29,6 +29,11 @@ void Lattice::create_control_points() {
     }
 }
 
+void Lattice::set_control_point_pos(LPoint3f pos, int index) {
+    NodePath c_point = _control_points[index];
+    c_point.set_pos(pos);
+}
+
 void Lattice::reset_control_points() {
     for (NodePath& c_point : _control_points) {
         c_point.remove_node();
@@ -54,6 +59,7 @@ void Lattice::create_point(LPoint3f point) {
     c_point.set_pos(point);
     c_point.set_scale(0.05);
     c_point.set_color(1, 0, 1, 1);
+    c_point.set_tag("control_point", std::to_string(_control_points.size()));
     _control_points.push_back(c_point);
 }
 
@@ -75,7 +81,7 @@ void Lattice::calculate_lattice_vec() {
     LVector3f s = LVector3f(size_s, 0, 0);
     LVector3f t = LVector3f(0, 0, size_t);
     LVector3f u = LVector3f(0, size_u, 0);
-
+    
     _lattice_vecs.push_back(s);
     _lattice_vecs.push_back(t);
     _lattice_vecs.push_back(u);

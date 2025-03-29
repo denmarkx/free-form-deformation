@@ -25,9 +25,10 @@ public:
 private:
     void process_node();
     void transform_vertex(GeomVertexData* data);
-    static void handle_click(const Event* event, void* args);
 
-    LVector3f deform_vertex(double s, double t, double u);
+    static void handle_click(const Event* event, void* args);
+    static AsyncTask::DoneStatus drag_task(GenericAsyncTask* task, void* data);
+
 
     int factorial(int n);
     int binomial_coeff(int n, int k);
@@ -36,11 +37,17 @@ private:
     NodePath _np;
     NodePath _render;
     Lattice* _lattice;
+
+    LVector3f deform_vertex(double s, double t, double u);
+
     CollisionRay* _collision_ray;
     CollisionTraverser* _traverser;
     CollisionHandlerQueue* _handler_queue;
+    
+    PT(AsyncTaskManager) _task_mgr = AsyncTaskManager::get_global_ptr();
 
     pvector<GeomNode*> _geom_nodes;
+    pvector<int> _selected_points;
 };
 
 typedef struct ClickerArgs {
