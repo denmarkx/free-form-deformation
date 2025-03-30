@@ -11,7 +11,10 @@ FreeFormDeform::FreeFormDeform(NodePath np, NodePath render) {
 }
 
 FreeFormDeform::~FreeFormDeform() {
-    _task_mgr->remove(_clicker_task);
+
+    if (_task_mgr->find_task("DragWatcherTask") != nullptr) {
+        _task_mgr->remove(_clicker_task);
+    }
 
     // Ignore mouse1:
     EventHandler* event_handler = EventHandler::get_global_event_handler();
