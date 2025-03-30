@@ -5,6 +5,10 @@ Lattice::Lattice(NodePath np) : NodePath("FFD_Lattice") {
     rebuild();
 }
 
+Lattice::~Lattice() {
+    remove_node();
+}
+
 void Lattice::rebuild() {
     calculate_lattice_vec();
     create_control_points();

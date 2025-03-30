@@ -5,6 +5,8 @@
 class Lattice : public NodePath {
 public:
     Lattice(NodePath np);
+    ~Lattice();
+
     void create_control_points();
     void calculate_lattice_vec();
 
@@ -25,7 +27,7 @@ private:
 
     pvector<NodePath> _control_points; // P(ijk)
     pvector<LVector3f> _lattice_vecs; // STU
-    pvector<int> _plane_spans = { 1, 2, 3 }; // lnm
+    pvector<int> _plane_spans = { 2, 3, 4 }; // lnm
 
     LPoint3f _x0, _x1;
 

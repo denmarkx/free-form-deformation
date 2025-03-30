@@ -10,6 +10,22 @@ FreeFormDeform::FreeFormDeform(NodePath np, NodePath render) {
     process_node();
 }
 
+FreeFormDeform::~FreeFormDeform() {
+    _task_mgr->remove(_clicker_task);
+
+    // Ignore mouse1:
+    EventHandler* event_handler = EventHandler::get_global_event_handler();
+    event_handler->remove_hooks_with((void*)_c_args);
+
+    // Delete the Lattice:
+    delete _lattice;
+
+    // Collision / Clicking Data:
+    _picker_node.remove_node();
+    delete _c_args;
+    delete _traverser;
+}
+
 int FreeFormDeform::factorial(int n) {
     if (n == 0) {
         return 1;
@@ -45,7 +61,6 @@ void FreeFormDeform::transform_vertex(GeomVertexData* data) {
             rewriter.set_data3f(x_ffd);
         }
         else {
-            //std::cout << "ignoring " << i << "\n";
             rewriter.set_data3f(default_vertex);
         }
 
@@ -198,7 +213,7 @@ void FreeFormDeform::handle_click(const Event* event, void* args) {
         return;
     }
 
-    Camera *camera = window->get_camera(0);
+    PT(Camera) camera = window->get_camera(0);
     ffd->_collision_ray->set_from_lens(camera, mouse->get_mouse().get_x(), mouse->get_mouse().get_y());
 
     NodePath render = window->get_render();
@@ -235,31 +250,30 @@ void FreeFormDeform::handle_click(const Event* event, void* args) {
     into_node.set_color(0, 1, 0, 1);
 }
 
-void FreeFormDeform::setup_clicker(Camera *camera, PandaFramework &framework, WindowFramework &window) {
+void FreeFormDeform::setup_clicker(WindowFramework &window) {
    _traverser = new CollisionTraverser("FFD_Traverser");
 
     PT(CollisionNode) collision_node = new CollisionNode("mouse_ray");
     collision_node->set_from_collide_mask(GeomNode::get_default_collide_mask());
 
-    NodePath picker_node = window.get_camera_group().attach_new_node(collision_node);
-    picker_node.show();
+    _picker_node = window.get_camera_group().attach_new_node(collision_node);
 
     _collision_ray = new CollisionRay();
     collision_node->add_solid(_collision_ray);
 
     _handler_queue = new CollisionHandlerQueue();
-    _traverser->add_collider(picker_node, _handler_queue);
+    _traverser->add_collider(_picker_node, _handler_queue);
 
     NodePath mouse = window.get_mouse();
     PT(MouseWatcher) mouse_ptr = DCAST(MouseWatcher, mouse.node());
 
     // Click mouse1 Event:
-    ClickerArgs *c_args = new ClickerArgs{ mouse_ptr, &window, this };
-    framework.define_key("mouse1", "description", handle_click, c_args);
+    _c_args = new ClickerArgs{ mouse_ptr, &window, this };
+
+    EventHandler *event_handler = EventHandler::get_global_event_handler();
+    event_handler->add_hook("mouse1", handle_click, _c_args);
 
     // Dragging Task:
-    PT(GenericAsyncTask) task = new GenericAsyncTask("MyTaskName", &drag_task, c_args);
-    _task_mgr->add(task);
-
-    //window.set_wireframe(1, 1);
+    _clicker_task = new GenericAsyncTask("DragWatcherTask", &drag_task, _c_args);
+    _task_mgr->add(_clicker_task);
 }
