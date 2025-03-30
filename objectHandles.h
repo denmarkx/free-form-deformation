@@ -17,8 +17,9 @@ public:
     
 private:
     static AsyncTask::DoneStatus mouse_task(GenericAsyncTask* task, void* args);
-
-    double get_displacement(LPoint2f& pointA, LPoint2f& pointB);
+    static AsyncTask::DoneStatus mouse_drag_task(GenericAsyncTask* task, void* args);
+    static void handle_click(const Event* event, void* args);
+    static void handle_drag_done(const Event* event, void* args);
 
     LPoint2f get_screen_space_origin(LPoint3f origin, LMatrix4 &proj_mat);
 
@@ -29,9 +30,12 @@ private:
     double _thickness = 1.0;
 
     NodePath _np, _camera_np, _aspect2d, _render2d;
-    
+    NodePath _hover_line_np, _active_line_np;
+
     Camera *_camera;
     PT(MouseWatcher) _mouse_watcher;
 
     pvector<NodePath> _axis_nps;
+
+    AsyncTask *_drag_task;
 };

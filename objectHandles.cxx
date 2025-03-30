@@ -6,6 +6,7 @@ ObjectHandles::ObjectHandles(NodePath np, NodePath mouse_np, NodePath camera_np,
     _aspect2d = aspect2d;
     _render2d = _render2d;
     _camera = camera;
+    _active_line_np = NodePath();
 
     // Convert to MouseWatcher:
     _mouse_watcher = DCAST(MouseWatcher, mouse_np.node());
@@ -77,6 +78,11 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
     // Args is the ObjectHandles instance.
     ObjectHandles* o_handle = (ObjectHandles*)args;
 
+    // Ignore if we have clicked one a line:
+    if (!o_handle->_active_line_np.is_empty()) {
+        return AsyncTask::DS_again;
+    }
+
     // Get Lens from o_handle->camera
     PT(Lens) lens = o_handle->_camera->get_lens();
     LMatrix4 proj_mat = lens->get_projection_mat();
@@ -96,6 +102,9 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
     // test it against the mouse coordinates instead of doing a collision test.
     int i = 0;
     int _2d_index = 0;
+
+    // Reset _hover_line_np:
+    o_handle->_hover_line_np = NodePath();
 
     for (NodePath& axis_np : o_handle->_axis_nps) {
         LColor color(0, 0, 0, 1);
@@ -136,6 +145,9 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
             continue;
         }
 
+        // Set "active":
+        o_handle->_hover_line_np = axis_np;
+
         // Otherwise, we're officially within range.
         axis_np.set_color_scale(1, 1, 0, 1);
         i++;
@@ -143,11 +155,60 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
     return AsyncTask::DoneStatus::DS_cont;
 }
 
+AsyncTask::DoneStatus ObjectHandles::mouse_drag_task(GenericAsyncTask* task, void* args) {
+    // Args is ObjectHandles instance.
+    ObjectHandles* o_handle = (ObjectHandles*)(args);
+
+    std::cout << "dragging." << "\n";
+
+    return AsyncTask::DS_cont;
+}
+
+void ObjectHandles::handle_drag_done(const Event* event, void* args) {
+    // Args is ObjectHandles instance.
+    ObjectHandles* o_handle = (ObjectHandles*)(args);
+    std::cout << "mouse up." << "\n";
+
+    // Stop dragging task:
+    AsyncTaskManager* task_mgr = AsyncTaskManager::get_global_ptr();
+    task_mgr->remove(o_handle->_drag_task);
+}
+
+void ObjectHandles::handle_click(const Event* event, void* args) {
+    // Args is ObjectHandles instance.
+    ObjectHandles* o_handle = (ObjectHandles*)(args);
+
+    NodePath active_line = o_handle->_hover_line_np;
+
+    // Ignore if there is no _hover_line_np:
+    if (active_line.is_empty()) {
+        return;
+    }
+
+    // We use this as a flag to pause mouse_task.
+    o_handle->_active_line_np = active_line;
+
+    // Start our dragging task.
+    AsyncTaskManager* task_mgr = AsyncTaskManager::get_global_ptr();
+    AsyncTask* _drag_task = new GenericAsyncTask("ObjectHandles_MouseDragTask", mouse_drag_task, o_handle);
+    o_handle->_drag_task = _drag_task;
+    task_mgr->add(_drag_task);
+
+    // mouse1-up signals that we are done.
+    EventHandler* event_handler = EventHandler::get_global_event_handler();
+    event_handler->add_hook("mouse1-up", handle_drag_done, o_handle);
+}
+
 void ObjectHandles::setup_mouse_watcher() {
     AsyncTaskManager* task_mgr = AsyncTaskManager::get_global_ptr();
     
+    // Mouse task for highlighting (dragging is separate for readability purposes):
     AsyncTask* task = new GenericAsyncTask("ObjectHandles_MouseTask", mouse_task, this);
     task_mgr->add(task);
+
+    // Click event for when we actually click a control.
+    EventHandler* event_handler = EventHandler::get_global_event_handler();
+    event_handler->add_hook("mouse1", handle_click, this);
 }
 
 void ObjectHandles::set_length(double length) {
