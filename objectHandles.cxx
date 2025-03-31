@@ -24,14 +24,16 @@ ObjectHandles::ObjectHandles(NodePath np, NodePath mouse_np, NodePath camera_np,
     set_bin("fixed", 1, 1);
 }
 
-NodePath ObjectHandles::create_plane_np(LVector3 normal, LColor color, std::string tag) {
+NodePath ObjectHandles::create_plane_np(LPoint3f pos, LPoint3f hpr, LColor color, AxisType axis_type) {
     // CardMaker is for visualization:
     CardMaker cm = CardMaker("axis_plane");
     cm.set_frame_fullscreen_quad();
 
     NodePath plane_np = NodePath(cm.generate());
-    plane_np.set_tag("axis", tag);
-    plane_np.set_scale(0.02);
+    plane_np.set_tag("axis", std::to_string((int)axis_type));
+    plane_np.set_scale(0.03);
+    plane_np.set_pos(pos);
+    plane_np.set_hpr(hpr);
     plane_np.set_color(color);
 
     _axis_plane_nps.push_back(plane_np);
@@ -57,11 +59,22 @@ void ObjectHandles::rebuild() {
     LPoint3f draw_point(0);
     LColor color(0, 0, 0, 1);
 
+    // Loose YZ Plane
+    NodePath loose_yz_plane = create_plane_np(LPoint3f(0, 0.5, 0.5), LPoint3f(90, 0, 0), LColor(1, 0, 0, 1), AxisType::AT_yz);
+
+    // Loose XZ Plane
+    NodePath loose_xz_plane = create_plane_np(LPoint3f(0.5, 0, 0.5), LPoint3f(0, 0, 0), LColor(0, 1, 0, 1), AxisType::AT_xz);
+
+    // Loose XY Plane
+    NodePath loose_xy_plane = create_plane_np(LPoint3f(0.5, 0.5, 0.0), LPoint3f(0, -90, 0), LColor(0, 0, 1, 1), AxisType::AT_xy);
+
     // Plane representing "select all".
-    NodePath select_all_plane = create_plane_np(LVector3f(0,0,1), LColor(1, 1, 0, 1), "-1");
-    select_all_plane.reparent_to(*this);
-    //select_all_plane.set_billboard_point_eye(1);
-    _axis_plane_nps.push_back(select_all_plane);
+    NodePath select_all_plane = create_plane_np(LPoint3f(0), LPoint3f(0), LColor(1, 1, 0, 0), AxisType::AT_all);
+    select_all_plane.set_billboard_point_eye(1);
+
+    for (NodePath& planes : _axis_plane_nps) {
+        planes.reparent_to(*this);
+    }
 
     // XYZ Line Segments
     for (int i = 0; i <= 2; i++) {
@@ -174,6 +187,7 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
     }
 
     // Check for Plane Hover:
+    i = 0;
     for (NodePath& plane_np : o_handle->_axis_plane_nps) {
         // For these..we can check the distance. It'll be a little off since it's circular, but we can accept that.
         // We can't do a traditional plane intersection unless there's somewhere in Plane to make its area finite.
@@ -182,17 +196,27 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
         // Distance from the plane_np to the mouse.
         distance = (point_2d - mouse_xy).length();
 
-        // TODO: color
-        if (distance <= 0.07) {
+        // Set original color:
+        // planes are pushed into the vec in such a way that i represents the color comp that is set to 1.
+        LColor color(0, 0, 0, 1);
+        color[i] = 1;
+
+        // The only exception to that is the last one. (select all plane is yellow):
+        if (i == o_handle->_axis_plane_nps.size()-1) {
+            color = LColor(1, 1, 0, 1);
+        }
+
+        // Distance check:
+        if (distance <= o_handle->_PLANE_AXIS_D) {
             plane_np.set_color(1, 1, 1, 1);
 
             // Set "active":
             o_handle->_hover_line_np = plane_np;
-
         }
         else {
-            plane_np.set_color(1, 1, 0, 1);
+            plane_np.set_color(color);
         }
+        i++;
     }
 
     return AsyncTask::DoneStatus::DS_cont;
@@ -228,11 +252,17 @@ AsyncTask::DoneStatus ObjectHandles::mouse_drag_task(GenericAsyncTask* task, voi
 
     // We modify the plane's normal to determine what axis we're intersecting.
     // This'll be useful for not only single axis movements, but 2-axis ones too.
-    LVector3f normal = LVector3f(0, 0, 1);
+    LVector3f normal;
 
-    // TODO: switch
-    if (axis == 2) {
-        normal = LVector3f(0, -1, 0);
+    switch (axis) {
+        case AxisType::AT_z: case AxisType::AT_xz:
+            normal = LVector3f(0, 1, 0);
+            break;
+        case AxisType::AT_yz:
+            normal = LVector3f(1, 0, 0);
+            break;
+        default:
+            normal = LVector3f(0, 0, 1);
     }
 
     // Get world space of the object handle:
@@ -251,11 +281,24 @@ AsyncTask::DoneStatus ObjectHandles::mouse_drag_task(GenericAsyncTask* task, voi
         parent.get_relative_point(o_handle->_camera_np, _near),
         parent.get_relative_vector(o_handle->_camera_np, _far));
 
-    // TODO: switch..
-    if (axis == -1) {
-        pos = pos3d;
-    } else {
-        pos[axis] = pos3d[axis];
+    switch (axis) {
+        case AxisType::AT_all:
+            pos = pos3d;
+            break;
+        case AxisType::AT_xy:
+            pos[0] = pos3d[0];
+            pos[1] = pos3d[1];
+            break;
+        case AxisType::AT_xz:
+            pos[0] = pos3d[0];
+            pos[2] = pos3d[2];
+            break;
+        case AxisType::AT_yz:
+            pos[1] = pos3d[1];
+            pos[2] = pos3d[2];
+            break;
+        default:
+            pos[axis] = pos3d[axis];
     }
     o_handle->_np.set_pos(parent, pos);
 

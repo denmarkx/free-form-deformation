@@ -22,7 +22,18 @@ public:
 
     void set_thickness(double thickness);
     double get_thickness();
-    
+
+private:
+    enum AxisType {
+        AT_x,
+        AT_y,
+        AT_z,
+        AT_xy,
+        AT_xz,
+        AT_yz,
+        AT_all,
+    };
+
 private:
     static AsyncTask::DoneStatus mouse_task(GenericAsyncTask* task, void* args);
     static AsyncTask::DoneStatus mouse_drag_task(GenericAsyncTask* task, void* args);
@@ -31,7 +42,7 @@ private:
 
     LPoint2f get_screen_space_origin(LPoint3f origin, LMatrix4 &proj_mat);
     LPoint2f convert_to_2d_space(NodePath& np, LPoint3f& origin, LMatrix4& proj_mat, LPoint2f& mouse_xy);
-    NodePath create_plane_np(LVector3f normal, LColor color, std::string tag);
+    NodePath create_plane_np(LPoint3f pos, LPoint3f hpr, LColor color, AxisType axis_type);
 
     void rebuild();
     void setup_mouse_watcher();
@@ -41,6 +52,8 @@ private:
 private:
     double _length = 0.5;
     double _thickness = 1.0;
+   
+    const double _PLANE_AXIS_D = 0.07;
 
     NodePath _np;
     NodePath _camera_np;
@@ -64,5 +77,4 @@ private:
 
     pvector<NodePath> _axis_nps;
     pvector<NodePath> _axis_plane_nps;
-
 };
