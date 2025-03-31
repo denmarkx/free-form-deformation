@@ -253,6 +253,10 @@ void ObjectHandles::disable_camera_movement() {
     }
     _trackball_node = _trackball2Cam->get_node();
     _trackball2Cam->set_node(nullptr);
+
+    // Trackball is still made away of incoming events, but we don't actually want to keep those
+    // when we re-enable the camera.
+    _cam_mat = _trackball->get_mat();
 }
 
 /*
@@ -260,6 +264,7 @@ Enables mouse movement of the camera.
 */
 void ObjectHandles::enable_camera_movement() {
     _trackball2Cam->set_node(_trackball_node);
+    _trackball->set_mat(_cam_mat);
 }
 
 

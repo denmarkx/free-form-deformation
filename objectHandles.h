@@ -44,6 +44,8 @@ private:
     PT(ButtonThrower) _button_thrower;
     PT(Transform2SG) _trackball2Cam;
 
+    LMatrix4f _cam_mat;
+
     pvector<NodePath> _axis_nps;
 
     PandaNode* _trackball_node;
