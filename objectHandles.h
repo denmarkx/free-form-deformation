@@ -7,7 +7,6 @@
 #include "trackball.h"
 #include "transform2sg.h"
 #include "mouseButton.h"
-#include "buttonThrower.h"
 #include "plane.h"
 
 class ObjectHandles : public NodePath {
@@ -33,23 +32,28 @@ private:
     void disable_camera_movement();
     void enable_camera_movement();
 
+private:
     double _length = 0.5;
     double _thickness = 1.0;
 
-    NodePath _np, _camera_np, _aspect2d, _render2d, _mouse_np, _trackball_np;
-    NodePath _hover_line_np, _active_line_np;
-    PT(Trackball) _trackball;
+    NodePath _np;
+    NodePath _camera_np;
+    NodePath _mouse_np;
+    NodePath _trackball_np;
+    NodePath _hover_line_np;
+    NodePath _active_line_np;
 
-    Camera *_camera;
+    PT(Trackball) _trackball;
     PT(MouseWatcher) _mouse_watcher;
-    PT(ButtonThrower) _button_thrower;
     PT(Transform2SG) _trackball2Cam;
 
+    Camera* _camera;
     LMatrix4f _cam_mat;
-
-    pvector<NodePath> _axis_nps;
 
     PandaNode* _trackball_node;
 
     AsyncTask *_drag_task;
+
+    pvector<NodePath> _axis_nps;
+
 };

@@ -3,22 +3,11 @@
 ObjectHandles::ObjectHandles(NodePath np, NodePath mouse_np, NodePath camera_np, Camera *camera, NodePath aspect2d, NodePath render2d) : NodePath("ObjectHandles") {
     _np = np;
     _camera_np = camera_np;
-    _aspect2d = aspect2d;
-    _render2d = _render2d;
     _camera = camera;
     _mouse_np = mouse_np;
     _active_line_np = NodePath();
 
-    // We'll need this for later.
-    // (see: disable_camera_movement)
-    // We don't have a direct reference to the trackball NP, so we have to get that.
-    // It's reparented under the mouse anyway.
-
-    // TODO: cleanup, a lot of this is from figuring out how to disable the trackball properly
-    _trackball_np = mouse_np.get_child(0);
-    
-    _button_thrower = DCAST(ButtonThrower, mouse_np.get_child(1).node());
-
+    // This is for disabling / re-enabling the camera:
     _trackball = DCAST(Trackball, mouse_np.get_child(0).node());
     _trackball2Cam = DCAST(Transform2SG, _trackball->get_child(0));
 
@@ -33,9 +22,6 @@ ObjectHandles::ObjectHandles(NodePath np, NodePath mouse_np, NodePath camera_np,
     set_depth_write(false);
     set_depth_test(false);
     set_bin("fixed", 1, 1);
-
-    //disable_camera_movement();
-    //enable_camera_movement();
 }
 
 void ObjectHandles::rebuild() {
