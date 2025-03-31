@@ -6,7 +6,21 @@ ObjectHandles::ObjectHandles(NodePath np, NodePath mouse_np, NodePath camera_np,
     _aspect2d = aspect2d;
     _render2d = _render2d;
     _camera = camera;
+    _mouse_np = mouse_np;
     _active_line_np = NodePath();
+
+    // We'll need this for later.
+    // (see: disable_camera_movement)
+    // We don't have a direct reference to the trackball NP, so we have to get that.
+    // It's reparented under the mouse anyway.
+
+    // TODO: cleanup, a lot of this is from figuring out how to disable the trackball properly
+    _trackball_np = mouse_np.get_child(0);
+    
+    _button_thrower = DCAST(ButtonThrower, mouse_np.get_child(1).node());
+
+    _trackball = DCAST(Trackball, mouse_np.get_child(0).node());
+    _trackball2Cam = DCAST(Transform2SG, _trackball->get_child(0));
 
     // Convert to MouseWatcher:
     _mouse_watcher = DCAST(MouseWatcher, mouse_np.node());
@@ -19,6 +33,9 @@ ObjectHandles::ObjectHandles(NodePath np, NodePath mouse_np, NodePath camera_np,
     set_depth_write(false);
     set_depth_test(false);
     set_bin("fixed", 1, 1);
+
+    //disable_camera_movement();
+    //enable_camera_movement();
 }
 
 void ObjectHandles::rebuild() {
@@ -159,19 +176,28 @@ AsyncTask::DoneStatus ObjectHandles::mouse_drag_task(GenericAsyncTask* task, voi
     // Args is ObjectHandles instance.
     ObjectHandles* o_handle = (ObjectHandles*)(args);
 
-    std::cout << "dragging." << "\n";
-
     return AsyncTask::DS_cont;
 }
 
 void ObjectHandles::handle_drag_done(const Event* event, void* args) {
     // Args is ObjectHandles instance.
     ObjectHandles* o_handle = (ObjectHandles*)(args);
-    std::cout << "mouse up." << "\n";
+
+    // Ignore if there is no _active_line_np:
+    if (o_handle->_active_line_np.is_empty()) {
+        return;
+    }
 
     // Stop dragging task:
     AsyncTaskManager* task_mgr = AsyncTaskManager::get_global_ptr();
     task_mgr->remove(o_handle->_drag_task);
+
+    // Set _active_line_np to empty.
+    o_handle->_active_line_np.clear_color();
+    o_handle->_active_line_np = NodePath();
+
+    // Update camera movement:
+    o_handle->enable_camera_movement();
 }
 
 void ObjectHandles::handle_click(const Event* event, void* args) {
@@ -185,6 +211,9 @@ void ObjectHandles::handle_click(const Event* event, void* args) {
         return;
     }
 
+    // We can go ahead and reset this:
+    o_handle->_hover_line_np = NodePath();
+
     // We use this as a flag to pause mouse_task.
     o_handle->_active_line_np = active_line;
 
@@ -194,9 +223,9 @@ void ObjectHandles::handle_click(const Event* event, void* args) {
     o_handle->_drag_task = _drag_task;
     task_mgr->add(_drag_task);
 
-    // mouse1-up signals that we are done.
-    EventHandler* event_handler = EventHandler::get_global_event_handler();
-    event_handler->add_hook("mouse1-up", handle_drag_done, o_handle);
+    // Ignore camera movement:
+    o_handle->disable_camera_movement();
+
 }
 
 void ObjectHandles::setup_mouse_watcher() {
@@ -209,7 +238,30 @@ void ObjectHandles::setup_mouse_watcher() {
     // Click event for when we actually click a control.
     EventHandler* event_handler = EventHandler::get_global_event_handler();
     event_handler->add_hook("mouse1", handle_click, this);
+
+    // mouse1-up signals that we are done.
+    event_handler->add_hook("mouse1-up", handle_drag_done, this);
 }
+
+/*
+Disables mouse movement of the camera.
+*/
+void ObjectHandles::disable_camera_movement() {
+    NodePath first_child = _mouse_np.get_child(0);
+    if (first_child.get_name() != "trackball") {
+        return;
+    }
+    _trackball_node = _trackball2Cam->get_node();
+    _trackball2Cam->set_node(nullptr);
+}
+
+/*
+Enables mouse movement of the camera.
+*/
+void ObjectHandles::enable_camera_movement() {
+    _trackball2Cam->set_node(_trackball_node);
+}
+
 
 void ObjectHandles::set_length(double length) {
     _length = length;

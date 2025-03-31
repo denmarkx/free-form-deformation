@@ -4,6 +4,10 @@
 #include "lineSegs.h"
 #include "asyncTaskManager.h"
 #include "camera.h"
+#include "trackball.h"
+#include "transform2sg.h"
+#include "mouseButton.h"
+#include "buttonThrower.h"
 
 class ObjectHandles : public NodePath {
 public:
@@ -25,17 +29,24 @@ private:
 
     void rebuild();
     void setup_mouse_watcher();
+    void disable_camera_movement();
+    void enable_camera_movement();
 
     double _length = 0.5;
     double _thickness = 1.0;
 
-    NodePath _np, _camera_np, _aspect2d, _render2d;
+    NodePath _np, _camera_np, _aspect2d, _render2d, _mouse_np, _trackball_np;
     NodePath _hover_line_np, _active_line_np;
+    PT(Trackball) _trackball;
 
     Camera *_camera;
     PT(MouseWatcher) _mouse_watcher;
+    PT(ButtonThrower) _button_thrower;
+    PT(Transform2SG) _trackball2Cam;
 
     pvector<NodePath> _axis_nps;
+
+    PandaNode* _trackball_node;
 
     AsyncTask *_drag_task;
 };
