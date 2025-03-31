@@ -24,6 +24,21 @@ ObjectHandles::ObjectHandles(NodePath np, NodePath mouse_np, NodePath camera_np,
     set_bin("fixed", 1, 1);
 }
 
+NodePath ObjectHandles::create_plane_np(LVector3 normal, LColor color, std::string tag) {
+    // CardMaker is for visualization:
+    CardMaker cm = CardMaker("axis_plane");
+    cm.set_frame_fullscreen_quad();
+
+    NodePath plane_np = NodePath(cm.generate());
+    plane_np.set_tag("axis", tag);
+    plane_np.set_scale(0.02);
+    plane_np.set_color(color);
+
+    _axis_plane_nps.push_back(plane_np);
+    return plane_np;
+
+}
+
 void ObjectHandles::rebuild() {
     // Delete if we had any in our vec:
     for (NodePath& axis_np : _axis_nps) {
@@ -31,11 +46,24 @@ void ObjectHandles::rebuild() {
     }
     _axis_nps.clear();
 
+    // Delete the planes to:
+    for (NodePath& axis_plane_np : _axis_plane_nps) {
+        axis_plane_np.remove_node();
+    }
+    _axis_plane_nps.clear();
+
     LineSegs line_segs = LineSegs();
     NodePath line_seg_np;
     LPoint3f draw_point(0);
     LColor color(0, 0, 0, 1);
 
+    // Plane representing "select all".
+    NodePath select_all_plane = create_plane_np(LVector3f(0,0,1), LColor(1, 1, 0, 1), "-1");
+    select_all_plane.reparent_to(*this);
+    //select_all_plane.set_billboard_point_eye(1);
+    _axis_plane_nps.push_back(select_all_plane);
+
+    // XYZ Line Segments
     for (int i = 0; i <= 2; i++) {
         // Set draw/color at i to 1.
         draw_point[i] = get_length();
@@ -109,6 +137,7 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
     // Reset _hover_line_np:
     o_handle->_hover_line_np = NodePath();
 
+    // Check for Axis Line Seg:
     for (NodePath& axis_np : o_handle->_axis_nps) {
         LColor color(0, 0, 0, 1);
         color[i] = 1.0;
@@ -119,24 +148,11 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
         // Reset color:
         axis_np.set_color_scale(color);
 
-        // Object -> Camera Space
-        point_3d = o_handle->_camera_np.get_relative_point(axis_np, origin);
-
-        // From: tarsierpi on p3d forums:
-        LVecBase4f point_cam_2d = proj_mat.xform(LVecBase4f(point_3d[0], point_3d[1], point_3d[2], 1.0));
-
-        // point_cam_2d[3] provides us the forward "distance" from the object to the camera. We use this to scale our other 2 axis.
-        double point_cam_2d_3 = 1.0 / point_cam_2d[3];
-        
-        // Ignore point_cam_2d[2]
-        point_2d = LPoint2f(
-            point_cam_2d[0] * point_cam_2d_3,
-            point_cam_2d[1] * point_cam_2d_3
-        );
+        point_2d = o_handle->convert_to_2d_space(axis_np, origin, proj_mat, mouse_xy);
 
         // Distance between end of line segment to the origin.
-         full_segment_dist = (point_2d - origin_2d).length();
-         full_segment_dist = round(full_segment_dist * 100.0) / 100.0;
+        full_segment_dist = (point_2d - origin_2d).length();
+        full_segment_dist = round(full_segment_dist * 100.0) / 100.0;
 
          // Distance between mouse to origin + mouse to end of lineseg.
         distance = (point_2d - mouse_xy).length() + (origin_2d - mouse_xy).length();
@@ -154,8 +170,53 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
         // Otherwise, we're officially within range.
         axis_np.set_color_scale(1, 1, 0, 1);
         i++;
+        return AsyncTask::DS_again;
     }
+
+    // Check for Plane Hover:
+    for (NodePath& plane_np : o_handle->_axis_plane_nps) {
+        // For these..we can check the distance. It'll be a little off since it's circular, but we can accept that.
+        // We can't do a traditional plane intersection unless there's somewhere in Plane to make its area finite.
+        point_2d = o_handle->convert_to_2d_space(plane_np, LPoint3(0), proj_mat, mouse_xy);
+
+        // Distance from the plane_np to the mouse.
+        distance = (point_2d - mouse_xy).length();
+
+        // TODO: color
+        if (distance <= 0.07) {
+            plane_np.set_color(1, 1, 1, 1);
+
+            // Set "active":
+            o_handle->_hover_line_np = plane_np;
+
+        }
+        else {
+            plane_np.set_color(1, 1, 0, 1);
+        }
+    }
+
     return AsyncTask::DoneStatus::DS_cont;
+}
+
+/*
+Object 3D -> 2D Space conversion.
+*/
+LPoint2f ObjectHandles::convert_to_2d_space(NodePath& np, LPoint3f& origin, LMatrix4& proj_mat, LPoint2f& mouse_xy) {
+    LPoint3f point_3d;
+
+    // Object -> Camera Space
+    point_3d = _camera_np.get_relative_point(np, origin);
+
+    // From: tarsierpi on p3d forums:
+    LVecBase4f point_cam_2d = proj_mat.xform(LVecBase4f(point_3d[0], point_3d[1], point_3d[2], 1.0));
+
+    // point_cam_2d[3] provides us the forward "distance" from the object to the camera. We use this to scale our other 2 axis.
+    double point_cam_2d_3 = 1.0 / point_cam_2d[3];
+
+    return LPoint2f(
+        point_cam_2d[0] * point_cam_2d_3,
+        point_cam_2d[1] * point_cam_2d_3
+    );
 }
 
 AsyncTask::DoneStatus ObjectHandles::mouse_drag_task(GenericAsyncTask* task, void* args) {
@@ -169,7 +230,7 @@ AsyncTask::DoneStatus ObjectHandles::mouse_drag_task(GenericAsyncTask* task, voi
     // This'll be useful for not only single axis movements, but 2-axis ones too.
     LVector3f normal = LVector3f(0, 0, 1);
 
-    // XXX
+    // TODO: switch
     if (axis == 2) {
         normal = LVector3f(0, -1, 0);
     }
@@ -186,13 +247,17 @@ AsyncTask::DoneStatus ObjectHandles::mouse_drag_task(GenericAsyncTask* task, voi
     o_handle->_camera->get_lens()->extrude(o_handle->_mouse_watcher->get_mouse(), _near, _far);
 
     // Check for intersection:
-    if (plane.intersects_line(pos3d,
+    plane.intersects_line(pos3d,
         parent.get_relative_point(o_handle->_camera_np, _near),
-        parent.get_relative_vector(o_handle->_camera_np, _far))) {
+        parent.get_relative_vector(o_handle->_camera_np, _far));
 
+    // TODO: switch..
+    if (axis == -1) {
+        pos = pos3d;
+    } else {
         pos[axis] = pos3d[axis];
-        o_handle->_np.set_pos(parent, pos);
     }
+    o_handle->_np.set_pos(parent, pos);
 
     return AsyncTask::DS_cont;
 }

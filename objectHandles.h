@@ -8,7 +8,11 @@
 #include "transform2sg.h"
 #include "mouseButton.h"
 #include "plane.h"
+#include "cardMaker.h"
+#include "planeNode.h"
+#include "loader.h"
 
+#include "nearly_zero.h"
 class ObjectHandles : public NodePath {
 public:
     ObjectHandles(NodePath np, NodePath _mouse_np, NodePath camera_np, Camera *camera, NodePath aspect2d, NodePath render2d);
@@ -26,6 +30,8 @@ private:
     static void handle_drag_done(const Event* event, void* args);
 
     LPoint2f get_screen_space_origin(LPoint3f origin, LMatrix4 &proj_mat);
+    LPoint2f convert_to_2d_space(NodePath& np, LPoint3f& origin, LMatrix4& proj_mat, LPoint2f& mouse_xy);
+    NodePath create_plane_np(LVector3f normal, LColor color, std::string tag);
 
     void rebuild();
     void setup_mouse_watcher();
@@ -43,6 +49,8 @@ private:
     NodePath _hover_line_np;
     NodePath _active_line_np;
 
+    NodePath _test;
+
     PT(Trackball) _trackball;
     PT(MouseWatcher) _mouse_watcher;
     PT(Transform2SG) _trackball2Cam;
@@ -55,5 +63,6 @@ private:
     AsyncTask *_drag_task;
 
     pvector<NodePath> _axis_nps;
+    pvector<NodePath> _axis_plane_nps;
 
 };
