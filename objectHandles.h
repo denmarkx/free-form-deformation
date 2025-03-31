@@ -8,6 +8,7 @@
 #include "transform2sg.h"
 #include "mouseButton.h"
 #include "buttonThrower.h"
+#include "plane.h"
 
 class ObjectHandles : public NodePath {
 public:

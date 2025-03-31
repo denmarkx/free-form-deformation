@@ -176,6 +176,38 @@ AsyncTask::DoneStatus ObjectHandles::mouse_drag_task(GenericAsyncTask* task, voi
     // Args is ObjectHandles instance.
     ObjectHandles* o_handle = (ObjectHandles*)(args);
 
+    // We can get the axis of our handle via a tag it has:
+    int axis = atoi(o_handle->_active_line_np.get_net_tag("axis").c_str());
+
+    // We modify the plane's normal to determine what axis we're intersecting.
+    // This'll be useful for not only single axis movements, but 2-axis ones too.
+    LVector3f normal = LVector3f(0, 0, 1);
+
+    // XXX
+    if (axis == 2) {
+        normal = LVector3f(0, -1, 0);
+    }
+
+    // Get world space of the object handle:
+    LPlanef plane = LPlanef(normal, LPoint3f(0, 0, 0));
+    LPoint3f _near, _far, pos3d;
+
+    NodePath parent = o_handle->get_parent();
+
+    // https://discourse.panda3d.org/t/super-fast-mouse-ray-collisions-with-ground-plane/5022
+    LPoint3f pos = o_handle->_np.get_pos(parent);
+
+    o_handle->_camera->get_lens()->extrude(o_handle->_mouse_watcher->get_mouse(), _near, _far);
+
+    // Check for intersection:
+    if (plane.intersects_line(pos3d,
+        parent.get_relative_point(o_handle->_camera_np, _near),
+        parent.get_relative_vector(o_handle->_camera_np, _far))) {
+
+        pos[axis] = pos3d[axis];
+        o_handle->_np.set_pos(parent, pos);
+    }
+
     return AsyncTask::DS_cont;
 }
 
