@@ -13,6 +13,7 @@
 #include "camera.h"
 
 #include "lattice.h"
+#include "objectHandles.h"
 
 typedef struct ClickerArgs;
 
@@ -63,6 +64,8 @@ private:
 
     pvector<PT(GeomNode)> _geom_nodes;
     pvector<int> _selected_points;
+
+    ObjectHandles* _object_handles;
 };
 
 typedef struct ClickerArgs {

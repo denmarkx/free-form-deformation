@@ -13,9 +13,11 @@ public:
     void set_edge_spans(int size_x, int size_y, int size_z);
     void set_control_point_pos(LPoint3f pos, int index);
 
+    NodePath& get_control_point(int index);
+
     pvector<int> get_edge_spans();
     pvector<LVector3f> get_lattice_vecs();
-    LPoint3f get_control_point_pos(int i);
+    LPoint3f get_control_point_pos(int i, const NodePath& other);
     LPoint3f get_x0();
 
 private:

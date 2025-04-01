@@ -1,3 +1,6 @@
+#ifndef OBJECTHANDLES_H
+#define OBJECTHANDLES_H
+
 #include "nodePath.h"
 #include "genericAsyncTask.h"
 #include "mouseWatcher.h"
@@ -15,13 +18,21 @@
 #include "nearly_zero.h"
 class ObjectHandles : public NodePath {
 public:
-    ObjectHandles(NodePath np, NodePath _mouse_np, NodePath camera_np, Camera *camera, NodePath aspect2d, NodePath render2d);
+    ObjectHandles(NodePath &np, NodePath &parent, NodePath _mouse_np, NodePath camera_np, Camera *camera, NodePath aspect2d, NodePath render2d);
+    void cleanup();
 
     void set_length(double length);
     double get_length();
 
     void set_thickness(double thickness);
     double get_thickness();
+
+    void set_active(bool active);
+    bool is_active();
+
+    void set_node_path(NodePath &np, double scale_mult);
+    NodePath get_node_path();
+
 
 private:
     enum AxisType {
@@ -55,14 +66,15 @@ private:
    
     const double _PLANE_AXIS_D = 0.07;
 
+    bool _active;
+
     NodePath _np;
+    NodePath _np_parent;
     NodePath _camera_np;
     NodePath _mouse_np;
     NodePath _trackball_np;
     NodePath _hover_line_np;
     NodePath _active_line_np;
-
-    NodePath _test;
 
     PT(Trackball) _trackball;
     PT(MouseWatcher) _mouse_watcher;
@@ -78,3 +90,4 @@ private:
     pvector<NodePath> _axis_nps;
     pvector<NodePath> _axis_plane_nps;
 };
+#endif

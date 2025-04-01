@@ -34,6 +34,10 @@ void Lattice::create_control_points() {
     }
 }
 
+NodePath& Lattice::get_control_point(int index) {
+    return _control_points[index];
+}
+
 void Lattice::set_control_point_pos(LPoint3f pos, int index) {
     NodePath c_point = _control_points[index];
     c_point.set_pos(pos);
@@ -54,8 +58,8 @@ pvector<LVector3f> Lattice::get_lattice_vecs() {
     return this->_lattice_vecs;
 }
 
-LPoint3f Lattice::get_control_point_pos(int i) {
-    return _control_points[i].get_pos();
+LPoint3f Lattice::get_control_point_pos(int i, const NodePath& other) {
+    return _control_points[i].get_pos(other);
 }
 
 void Lattice::create_point(LPoint3f point) {

@@ -1,7 +1,11 @@
 #include "objectHandles.h"
 
-ObjectHandles::ObjectHandles(NodePath np, NodePath mouse_np, NodePath camera_np, Camera *camera, NodePath aspect2d, NodePath render2d) : NodePath("ObjectHandles") {
+ObjectHandles::ObjectHandles(NodePath &np, NodePath &parent, NodePath mouse_np, NodePath camera_np, Camera *camera, NodePath aspect2d, NodePath render2d) : NodePath("ObjectHandles") {
+    //set_node_path(_np);
     _np = np;
+    _np_parent = parent;
+    _active = false;
+
     _camera_np = camera_np;
     _camera = camera;
     _mouse_np = mouse_np;
@@ -13,9 +17,6 @@ ObjectHandles::ObjectHandles(NodePath np, NodePath mouse_np, NodePath camera_np,
 
     // Convert to MouseWatcher:
     _mouse_watcher = DCAST(MouseWatcher, mouse_np.node());
-
-    rebuild();
-    reparent_to(np);
     setup_mouse_watcher();
 
     // Object Handles are always seen regardless if its behind a solid object.
@@ -41,7 +42,15 @@ NodePath ObjectHandles::create_plane_np(LPoint3f pos, LPoint3f hpr, LColor color
 
 }
 
+void ObjectHandles::cleanup() {
+
+}
+
 void ObjectHandles::rebuild() {
+    // Reset everything active:
+    _hover_line_np = NodePath();
+    _active_line_np = NodePath();
+
     // Delete if we had any in our vec:
     for (NodePath& axis_np : _axis_nps) {
         axis_np.remove_node();
@@ -410,4 +419,32 @@ void ObjectHandles::set_thickness(double thickness) {
 
 double ObjectHandles::get_thickness() {
     return _thickness;
+}
+
+void ObjectHandles::set_active(bool active) {
+    _active = active;
+
+    if (!active) {
+        hide();
+    }
+    else {
+        show();
+    }
+}
+
+bool ObjectHandles::is_active() {
+    return _active;
+}
+
+void ObjectHandles::set_node_path(NodePath &np, double scale_mult) {
+    _np = np;
+    reparent_to(np);
+    rebuild();
+
+    // TODO: we can calculate this ourselves via the bounding box of the np.
+    set_scale(scale_mult);
+}
+
+NodePath ObjectHandles::get_node_path() {
+    return _np;
 }

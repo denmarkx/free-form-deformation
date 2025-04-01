@@ -85,7 +85,7 @@ LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
             for (int k = 0; k <= spans[2]; k++) {
                 bernstein_coeff = bernstein(k, spans[2], u);
 
-                LPoint3f p_ijk = _lattice->get_control_point_pos(p_index);
+                LPoint3f p_ijk = _lattice->get_control_point_pos(p_index, _render);
                 vec_k += bernstein_coeff * p_ijk;
 
                 p_index++;
@@ -170,14 +170,15 @@ LPoint3f FreeFormDeform::point_at_axis(double axis_value, LPoint3f point, LVecto
     return point + vector * ((axis_value - point[axis]) / vector[axis]);
 }
 
+/*
+Updates the vertices whenever there is a point selected.
+Uses the pre-existing control point position.
+*/
 AsyncTask::DoneStatus FreeFormDeform::drag_task(GenericAsyncTask* task, void* args) {
     ClickerArgs* c_args = (ClickerArgs*)args;
-
+   
     PT(MouseWatcher) mouse = c_args->mouse;
     FreeFormDeform* ffd = c_args->ffd;
-    WindowFramework* window = c_args->window;
-
-    // TODO: checck if dragging?>
 
     // Ignore if mouse is out of bounds:
     if (!mouse->has_mouse()) {
@@ -186,21 +187,11 @@ AsyncTask::DoneStatus FreeFormDeform::drag_task(GenericAsyncTask* task, void* ar
     
     // Ignore if there's nothing selected.
     if (ffd->_selected_points.size() == 0) {
+        ffd->_object_handles->set_active(false);
         return AsyncTask::DS_again;
     }
 
-    NodePath render = window->get_render();
-    NodePath camera_np = window->get_camera_group();
-
-    LPoint3f near_point = render.get_relative_point(camera_np, ffd->_collision_ray->get_origin());
-    LVector3f near_vector = render.get_relative_vector(camera_np, ffd->_collision_ray->get_direction());
-
-    // XXX: temporarily forced to Y assuming looking at XZ (default)
-    int index = ffd->_selected_points[0];
-    LPoint3f point = ffd->_lattice->get_control_point_pos(index);
-
-    ffd->_lattice->set_control_point_pos(ffd->point_at_axis(.5, near_point, near_vector, 1), index);
-
+    ffd->_object_handles->set_active(true);
     ffd->update_vertices();
     return AsyncTask::DS_cont;
 }
@@ -209,8 +200,8 @@ void FreeFormDeform::handle_click(const Event* event, void* args) {
     ClickerArgs* c_args = (ClickerArgs*)args;
 
     PT(MouseWatcher) mouse = c_args->mouse;
-    FreeFormDeform*ffd = c_args->ffd;
-    WindowFramework *window = c_args->window;
+    FreeFormDeform* ffd = c_args->ffd;
+    WindowFramework* window = c_args->window;
 
     if (!mouse->has_mouse()) {
         return;
@@ -223,18 +214,28 @@ void FreeFormDeform::handle_click(const Event* event, void* args) {
     ffd->_traverser->traverse(render);
     ffd->_handler_queue->sort_entries();
 
+    NodePath control_point;
     if (ffd->_handler_queue->get_num_entries() == 0) {
+        // TODO: check if we're moving camera?
+
+        //for (int i : ffd->_selected_points) {
+            //std::cout << i << "\n";
+            //control_point = ffd->_lattice->get_control_point(i);
+            //control_point.set_color(1, 0, 1, 1);
+        //}
+        //ffd->_selected_points.clear();
         return;
     }
 
     NodePath into_node = ffd->_handler_queue->get_entry(0)->get_into_node_path();
+    NodePath* into_node_ptr = &into_node;
 
     if (!into_node.has_net_tag("control_point")) {
         return;
     }
 
     int point_index = atoi(into_node.get_net_tag("control_point").c_str());
-    
+
     pvector<int>::iterator it;
     it = std::find(ffd->_selected_points.begin(), ffd->_selected_points.end(), point_index);
 
@@ -250,7 +251,13 @@ void FreeFormDeform::handle_click(const Event* event, void* args) {
 
     // Select:
     ffd->_selected_points.push_back(point_index);
-    into_node.set_color(0, 1, 0, 1);
+
+    control_point = ffd->_lattice->get_control_point(point_index);
+
+    control_point.set_color(0, 1, 0, 1);
+
+    // Need to actually get the proper NodePath for this:
+    ffd->_object_handles->set_node_path(control_point, 15);
 }
 
 void FreeFormDeform::setup_clicker(WindowFramework &window) {
@@ -279,4 +286,7 @@ void FreeFormDeform::setup_clicker(WindowFramework &window) {
     // Dragging Task:
     _clicker_task = new GenericAsyncTask("DragWatcherTask", &drag_task, _c_args);
     _task_mgr->add(_clicker_task);
+
+    // Object Handles:
+    _object_handles = new ObjectHandles(NodePath(), _render, window.get_mouse(), window.get_camera_group(), window.get_camera(0), window.get_aspect_2d(), window.get_render_2d());
 }
