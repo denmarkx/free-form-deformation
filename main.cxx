@@ -16,13 +16,20 @@ int main() {
     window->setup_trackball();
     window->enable_keyboard();
 
-    NodePath np = window->load_model(window->get_render(), "jack.egg");
+    NodePath np = window->load_model(window->get_render(), "jack");
+    np.flatten_strong();
 
 
-    //ObjectHandles oh(np, window->get_mouse(), window->get_camera_group(), window->get_camera(0), window->get_aspect_2d(), window->get_render_2d());
-    //oh.set_thickness(5);
-    FreeFormDeform* ffd = new FreeFormDeform(np, window->get_render());
-    ffd->setup_clicker(*window);
+    ObjectHandles *oh = new ObjectHandles(np, window->get_mouse(), window->get_camera_group(), window->get_camera(0));
+    oh->set_thickness(5);
+    //window->get_render().ls();
+
+    //delete oh;
+
+    //window->get_render().ls();
+
+    //FreeFormDeform* ffd = new FreeFormDeform(np, window->get_render());
+    //ffd->setup_clicker(*window);
     framework->main_loop();
     return 0;
 }

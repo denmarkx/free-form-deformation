@@ -15,10 +15,11 @@
 #include "planeNode.h"
 #include "loader.h"
 
-#include "nearly_zero.h"
 class ObjectHandles : public NodePath {
 public:
-    ObjectHandles(NodePath &np, NodePath &parent, NodePath _mouse_np, NodePath camera_np, Camera *camera, NodePath aspect2d, NodePath render2d);
+    ObjectHandles(NodePath &np, NodePath _mouse_np, NodePath camera_np, Camera *camera);
+    ~ObjectHandles();
+
     void cleanup();
 
     void set_length(double length);
@@ -61,6 +62,10 @@ private:
     void enable_camera_movement();
 
 private:
+    // Task Names:
+    const std::string DRAG_TASK_NAME = "ObjectHandles_MouseDragTask";
+    const std::string MOUSE_TASK_NAME = "ObjectHandles_MouseTask";
+
     double _length = 0.5;
     double _thickness = 1.0;
    
@@ -79,13 +84,11 @@ private:
     PT(Trackball) _trackball;
     PT(MouseWatcher) _mouse_watcher;
     PT(Transform2SG) _trackball2Cam;
+    PT(PandaNode) _trackball_node;
+    PT(AsyncTask) _drag_task;
+    PT(Camera) _camera;
 
-    Camera* _camera;
     LMatrix4f _cam_mat;
-
-    PandaNode* _trackball_node;
-
-    AsyncTask *_drag_task;
 
     pvector<NodePath> _axis_nps;
     pvector<NodePath> _axis_plane_nps;

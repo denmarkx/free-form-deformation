@@ -1,10 +1,8 @@
 #include "objectHandles.h"
 
-ObjectHandles::ObjectHandles(NodePath &np, NodePath &parent, NodePath mouse_np, NodePath camera_np, Camera *camera, NodePath aspect2d, NodePath render2d) : NodePath("ObjectHandles") {
-    //set_node_path(_np);
-    _np = np;
-    _np_parent = parent;
-    _active = false;
+ObjectHandles::ObjectHandles(NodePath &np, NodePath mouse_np, NodePath camera_np, Camera *camera) : NodePath("ObjectHandles") {
+    set_node_path(np, 1.0);
+    set_active(false);
 
     _camera_np = camera_np;
     _camera = camera;
@@ -25,6 +23,36 @@ ObjectHandles::ObjectHandles(NodePath &np, NodePath &parent, NodePath mouse_np, 
     set_bin("fixed", 1, 1);
 }
 
+ObjectHandles::~ObjectHandles() {
+    cleanup();
+
+    // Stop our tasks:
+    PT(AsyncTask) task;
+    AsyncTaskManager* task_mgr = AsyncTaskManager::get_global_ptr();
+
+    // Drag Task:
+    task = task_mgr->find_task(DRAG_TASK_NAME);
+    if (task != nullptr) {
+        task_mgr->remove(task_mgr->find_task(DRAG_TASK_NAME));
+    }
+
+    // Mouse Task:
+    task = task_mgr->find_task(MOUSE_TASK_NAME);
+    if (task != nullptr) {
+        task_mgr->remove(task_mgr->find_task(MOUSE_TASK_NAME));
+    }
+
+    // Ignore mouse1 and mouse1-up:
+    EventHandler* event_handler = EventHandler::get_global_event_handler();
+    event_handler->remove_hooks_with(this);
+}
+
+void ObjectHandles::cleanup() {
+    // Everything was originally parented to ourselves..
+    // so we (shouldn't) have to manually call this on our children.
+    remove_node();
+}
+
 NodePath ObjectHandles::create_plane_np(LPoint3f pos, LPoint3f hpr, LColor color, AxisType axis_type) {
     // CardMaker is for visualization:
     CardMaker cm = CardMaker("axis_plane");
@@ -39,10 +67,6 @@ NodePath ObjectHandles::create_plane_np(LPoint3f pos, LPoint3f hpr, LColor color
 
     _axis_plane_nps.push_back(plane_np);
     return plane_np;
-
-}
-
-void ObjectHandles::cleanup() {
 
 }
 
@@ -354,7 +378,7 @@ void ObjectHandles::handle_click(const Event* event, void* args) {
 
     // Start our dragging task.
     AsyncTaskManager* task_mgr = AsyncTaskManager::get_global_ptr();
-    AsyncTask* _drag_task = new GenericAsyncTask("ObjectHandles_MouseDragTask", mouse_drag_task, o_handle);
+    PT(AsyncTask) _drag_task = new GenericAsyncTask(o_handle->DRAG_TASK_NAME, mouse_drag_task, o_handle);
     o_handle->_drag_task = _drag_task;
     task_mgr->add(_drag_task);
 
@@ -367,7 +391,7 @@ void ObjectHandles::setup_mouse_watcher() {
     AsyncTaskManager* task_mgr = AsyncTaskManager::get_global_ptr();
     
     // Mouse task for highlighting (dragging is separate for readability purposes):
-    AsyncTask* task = new GenericAsyncTask("ObjectHandles_MouseTask", mouse_task, this);
+    AsyncTask* task = new GenericAsyncTask(MOUSE_TASK_NAME, mouse_task, this);
     task_mgr->add(task);
 
     // Click event for when we actually click a control.

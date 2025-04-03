@@ -288,5 +288,5 @@ void FreeFormDeform::setup_clicker(WindowFramework &window) {
     _task_mgr->add(_clicker_task);
 
     // Object Handles:
-    _object_handles = new ObjectHandles(NodePath(), _render, window.get_mouse(), window.get_camera_group(), window.get_camera(0), window.get_aspect_2d(), window.get_render_2d());
+    _object_handles = new ObjectHandles(NodePath(), window.get_mouse(), window.get_camera_group(), window.get_camera(0));
 }
