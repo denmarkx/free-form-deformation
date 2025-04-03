@@ -31,16 +31,18 @@ public:
 
 private:
     void process_node();
-    void transform_vertex(GeomVertexData* data);
+    void transform_vertex(GeomVertexData* data, int index);
 
     static void handle_click(const Event* event, void* args);
     static AsyncTask::DoneStatus drag_task(GenericAsyncTask* task, void* data);
 
 
-    int factorial(int n);
+    double factorial(double n);
     int binomial_coeff(int n, int k);
     double bernstein(double v, double n, double x);
     LPoint3f point_at_axis(double axis_value, LPoint3f point, LVector3f vector, int axis);
+    bool is_influenced(int index, double s, double t, double u);
+    int get_point_index(int i, int j, int k);
 
     NodePath _np;
     NodePath _render;
@@ -64,6 +66,7 @@ private:
 
     pvector<PT(GeomNode)> _geom_nodes;
     pvector<int> _selected_points;
+    pmap<int, pvector<int>> _influenced_vertices;
 
     ObjectHandles* _object_handles;
 };

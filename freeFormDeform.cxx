@@ -29,7 +29,7 @@ FreeFormDeform::~FreeFormDeform() {
     delete _traverser;
 }
 
-int FreeFormDeform::factorial(int n) {
+double FreeFormDeform::factorial(double n) {
     if (n == 0) {
         return 1;
     }
@@ -44,30 +44,49 @@ double FreeFormDeform::bernstein(double v, double n, double x) {
     return binomial_coeff(n, v) * pow(x, v) * pow(1 - x, n - v);
 }
 
-void FreeFormDeform::transform_vertex(GeomVertexData* data) {
-    GeomVertexRewriter rewriter(data, "vertex");
+/*
+Returns the actual index of the control point given i, j, k.
+*/
+int FreeFormDeform::get_point_index(int i, int j, int k) {
+    pvector<int> spans = _lattice->get_edge_spans();
+    return i * (spans[2] + 1) * (spans[2] + 1) + j * (spans[1] + 1) + k;
+}
+
+/*
+Returns true/false if the given control point influences the given vertex (stu).
+*/
+bool FreeFormDeform::is_influenced(int index, double s, double t, double u) {
+    pvector<int> spans = _lattice->get_edge_spans();
+    NodePath &point_np = _lattice->get_control_point(index);
+
+    int i = atoi(point_np.get_net_tag("i").c_str());
+    int j = atoi(point_np.get_net_tag("j").c_str());
+    int k = atoi(point_np.get_net_tag("k").c_str());
+    
+    return bernstein(i, spans[0], s) * bernstein(j, spans[1], t) * bernstein(k, spans[2], u);
+}
+
+void FreeFormDeform::transform_vertex(GeomVertexData* data, int index) {
+    GeomVertexWriter rewriter(data, "vertex");
 
     LPoint3f default_vertex, default_object_space; // (stu)
-
     LVector3f x_ffd;
 
-    int i = 0;
-    while (!rewriter.is_at_end()) {
-        default_vertex = _default_vertex_ws_os[i][0];
-        double s = _default_vertex_ws_os[i][1][0];
-        double t = _default_vertex_ws_os[i][1][1];
-        double u = _default_vertex_ws_os[i][1][2];
+    pvector<int> influenced_arrays;
+    influenced_arrays = _influenced_vertices[index];
+
+    int vertex = 0;
+    for (int i = 0; i < influenced_arrays.size(); i++) {
+        vertex = influenced_arrays[i];
+        rewriter.set_row(vertex);
+
+        default_vertex = _default_vertex_ws_os[vertex][0];
+        double s = _default_vertex_ws_os[vertex][1][0];
+        double t = _default_vertex_ws_os[vertex][1][1];
+        double u = _default_vertex_ws_os[vertex][1][2];
+
         x_ffd = deform_vertex(s, t, u);
-
-        // Ignore rewriting if we moved a neglible amount.
-        if (!default_vertex.almost_equal(x_ffd, 0.01)) {
-            rewriter.set_data3f(x_ffd);
-        }
-        else {
-            rewriter.set_data3f(default_vertex);
-        }
-
-        i++;
+        rewriter.set_data3f(x_ffd);
     }
 }
 
@@ -108,7 +127,7 @@ void FreeFormDeform::update_vertices() {
         for (size_t i = 0; i < geom_node->get_num_geoms(); i++) {
             geom = geom_node->modify_geom(i);
             vertex_data = geom->modify_vertex_data();
-            transform_vertex(vertex_data);
+            transform_vertex(vertex_data, _selected_points[i]);
             geom->set_vertex_data(vertex_data);
             geom_node->set_geom(i, geom);
         }
@@ -134,6 +153,10 @@ void FreeFormDeform::process_node() {
     PT(GeomNode) geom_node;
     CPT(Geom) geom;
 
+    bool influenced = false;
+
+    int row = 0;
+
     for (size_t i = 0; i < collection.get_num_paths(); i++) {
         geom_node = DCAST(GeomNode, collection.get_path(i).node());
         for (size_t j = 0; j < geom_node->get_num_geoms(); j++) {
@@ -142,7 +165,7 @@ void FreeFormDeform::process_node() {
 
             // Store our unmodified points:
             v_reader = GeomVertexReader(vertex_data, "vertex");
-
+            row = 0;
             while (!v_reader.is_at_end()) {
                 vertex_object_space.clear();
                 vertex = v_reader.get_data3f();
@@ -156,6 +179,15 @@ void FreeFormDeform::process_node() {
                 vertex_object_space.push_back(vertex);
                 vertex_object_space.push_back(LPoint3f(s, t, u));
                 _default_vertex_ws_os.push_back(vertex_object_space);
+
+                // We're going to determine if this vertex is modified by a control point.
+                for (size_t ctrl_i = 0; ctrl_i < _lattice->get_num_control_points(); ctrl_i++) {
+                    influenced = is_influenced(ctrl_i, s, t, u);
+                    if (influenced) {
+                        _influenced_vertices[ctrl_i].push_back(row);
+                    }
+                }
+                row++;
             }
         }
         _geom_nodes.push_back(geom_node);
@@ -254,7 +286,7 @@ void FreeFormDeform::handle_click(const Event* event, void* args) {
     control_point.set_color(0, 1, 0, 1);
 
     // Need to actually get the proper NodePath for this:
-    ffd->_object_handles->set_node_path(control_point, 15);
+    ffd->_object_handles->set_node_path(control_point);
 }
 
 void FreeFormDeform::setup_clicker(WindowFramework &window) {

@@ -30,8 +30,7 @@ void Lattice::create_control_points(const double radius) {
                     _x0[1] + ((double)k / _plane_spans[2]) * _lattice_vecs[2][1],
                     _x0[2] + ((double)j / _plane_spans[1]) * _lattice_vecs[1][2]
                 );
-
-                create_point(point, radius);
+                create_point(point, radius, i, j, k);
             }
         }
     }
@@ -53,6 +52,10 @@ void Lattice::reset_control_points() {
     _control_points.clear();
 }
 
+int Lattice::get_num_control_points() {
+    return _control_points.size();
+}
+
 LPoint3f Lattice::get_x0() {
     return this->_x0;
 }
@@ -65,13 +68,33 @@ LPoint3f Lattice::get_control_point_pos(int i, const NodePath& other) {
     return _control_points[i].get_pos(other);
 }
 
-void Lattice::create_point(LPoint3f point, const double radius) {
+LPoint3f Lattice::get_control_point_pos(int i, int j, int k, const NodePath& other) {
+    NodePath point;
+    int p_i, p_j, p_k;
+    for (size_t n = 0; n < _control_points.size(); n++) {
+        point = _control_points[n];
+        p_i = atoi(point.get_net_tag("i").c_str());
+        p_j = atoi(point.get_net_tag("j").c_str());
+        p_k = atoi(point.get_net_tag("k").c_str());
+        if (i == p_i && j == p_j && k == p_k) {
+            return point.get_pos(other);
+        }
+    }
+    return LPoint3f(0);
+}
+
+void Lattice::create_point(LPoint3f point, const double radius, int i, int j, int k) {
     PT(PandaNode) p_node = _loader->load_sync("misc/sphere");
     NodePath c_point = this->attach_new_node(p_node);
     c_point.set_pos(point);
     c_point.set_scale(0.05 * radius);
     c_point.set_color(1, 0, 1, 1);
     c_point.set_tag("control_point", std::to_string(_control_points.size()));
+
+    // TODO: probably a better way to derive this:
+    c_point.set_tag("i", std::to_string(i));
+    c_point.set_tag("j", std::to_string(j));
+    c_point.set_tag("k", std::to_string(k));
     _control_points.push_back(c_point);
 }
 
