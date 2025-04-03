@@ -133,6 +133,15 @@ void ObjectHandles::rebuild() {
 
         _axis_nps.push_back(line_seg_np);
     }
+
+    // Some CollisionRay implementations (like FFD's clicker) may pick up things from
+    // the object handles. For that reason, we set the collide mask to a dummy.
+    NodePathCollection npc = find_all_matches("**/+GeomNode");
+    NodePath path;
+    for (size_t i = 0; i < npc.get_num_paths(); i++) {
+        path = npc.get_path(i);
+        path.node()->set_into_collide_mask(CollideMask::bit(21));
+    }
 }
 
 /*
