@@ -1,13 +1,14 @@
 #include "geomVertexData.h"
 #include "nodePath.h"
 #include "loader.h"
+#include "boundingSphere.h"
 
 class Lattice : public NodePath {
 public:
     Lattice(NodePath np);
     ~Lattice();
 
-    void create_control_points();
+    void create_control_points(const double radius);
     void calculate_lattice_vec();
 
     void set_edge_spans(int size_x, int size_y, int size_z);
@@ -21,7 +22,7 @@ public:
     LPoint3f get_x0();
 
 private:
-    void create_point(LPoint3f point);
+    void create_point(LPoint3f point, const double radius);
     void reset_control_points();
     void rebuild();
 

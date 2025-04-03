@@ -10,11 +10,14 @@ Lattice::~Lattice() {
 }
 
 void Lattice::rebuild() {
+    CPT(BoundingSphere) b_sphere = _np.get_bounds()->as_bounding_sphere();
+    const double radius = b_sphere->get_radius();
+    
     calculate_lattice_vec();
-    create_control_points();
+    create_control_points(radius);
 }
 
-void Lattice::create_control_points() {
+void Lattice::create_control_points(const double radius) {
     reset_control_points();
 
     LPoint3f point;
@@ -28,7 +31,7 @@ void Lattice::create_control_points() {
                     _x0[2] + ((double)j / _plane_spans[1]) * _lattice_vecs[1][2]
                 );
 
-                create_point(point);
+                create_point(point, radius);
             }
         }
     }
@@ -62,11 +65,11 @@ LPoint3f Lattice::get_control_point_pos(int i, const NodePath& other) {
     return _control_points[i].get_pos(other);
 }
 
-void Lattice::create_point(LPoint3f point) {
+void Lattice::create_point(LPoint3f point, const double radius) {
     PT(PandaNode) p_node = _loader->load_sync("misc/sphere");
     NodePath c_point = this->attach_new_node(p_node);
     c_point.set_pos(point);
-    c_point.set_scale(0.05);
+    c_point.set_scale(0.05 * radius);
     c_point.set_color(1, 0, 1, 1);
     c_point.set_tag("control_point", std::to_string(_control_points.size()));
     _control_points.push_back(c_point);
