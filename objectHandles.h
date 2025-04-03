@@ -31,7 +31,7 @@ public:
     void set_active(bool active);
     bool is_active();
 
-    void set_node_path(NodePath &np, double scale_mult);
+    void set_node_path(NodePath &np);
     NodePath get_node_path();
 
 
@@ -60,6 +60,7 @@ private:
     void setup_mouse_watcher();
     void disable_camera_movement();
     void enable_camera_movement();
+    void update_scale(LMatrix4& proj_mat);
 
 private:
     // Task Names:
@@ -67,7 +68,7 @@ private:
     const std::string MOUSE_TASK_NAME = "ObjectHandles_MouseTask";
 
     double _length = 0.5;
-    double _thickness = 1.0;
+    double _thickness = 3.0;
    
     const double _PLANE_AXIS_D = 0.07;
 

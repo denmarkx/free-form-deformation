@@ -1,7 +1,7 @@
 #include "objectHandles.h"
 
 ObjectHandles::ObjectHandles(NodePath &np, NodePath mouse_np, NodePath camera_np, Camera *camera) : NodePath("ObjectHandles") {
-    set_node_path(np, 1.0);
+    set_node_path(np);
     set_active(false);
 
     _camera_np = camera_np;
@@ -261,7 +261,19 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
         i++;
     }
 
+    o_handle->update_scale(proj_mat);
+
     return AsyncTask::DoneStatus::DS_cont;
+}
+
+/*
+Updates the scale of the object handle based on the camera.
+*/
+void ObjectHandles::update_scale(LMatrix4 &proj_mat) {
+    LPoint3f point_3d;
+    point_3d = _camera_np.get_relative_point(_np, point_3d);
+    LVecBase4f point_cam = proj_mat.xform(LVecBase4f(point_3d[0], point_3d[1], point_3d[2], 1.0));
+    set_scale(point_cam[3] * 0.4);
 }
 
 /*
@@ -469,13 +481,15 @@ bool ObjectHandles::is_active() {
     return _active;
 }
 
-void ObjectHandles::set_node_path(NodePath &np, double scale_mult) {
+void ObjectHandles::set_node_path(NodePath &np) {
     _np = np;
+
+    if (_np.is_empty()) {
+        return;
+    }
+
     reparent_to(np);
     rebuild();
-
-    // TODO: we can calculate this ourselves via the bounding box of the np.
-    set_scale(scale_mult);
 }
 
 NodePath ObjectHandles::get_node_path() {
