@@ -216,14 +216,11 @@ void FreeFormDeform::handle_click(const Event* event, void* args) {
 
     NodePath control_point;
     if (ffd->_handler_queue->get_num_entries() == 0) {
-        // TODO: check if we're moving camera?
-
-        //for (int i : ffd->_selected_points) {
-            //std::cout << i << "\n";
-            //control_point = ffd->_lattice->get_control_point(i);
-            //control_point.set_color(1, 0, 1, 1);
-        //}
-        //ffd->_selected_points.clear();
+        for (int i : ffd->_selected_points) {
+            control_point = ffd->_lattice->get_control_point(i);
+            control_point.set_color(1, 0, 1, 1);
+        }
+        ffd->_selected_points.clear();
         return;
     }
 
@@ -281,7 +278,7 @@ void FreeFormDeform::setup_clicker(WindowFramework &window) {
     _c_args = new ClickerArgs{ mouse_ptr, &window, this };
 
     EventHandler *event_handler = EventHandler::get_global_event_handler();
-    event_handler->add_hook("mouse1", handle_click, _c_args);
+    event_handler->add_hook("shift-mouse1", handle_click, _c_args);
 
     // Dragging Task:
     _clicker_task = new GenericAsyncTask("DragWatcherTask", &drag_task, _c_args);
