@@ -43,6 +43,7 @@ private:
     LPoint3f point_at_axis(double axis_value, LPoint3f point, LVector3f vector, int axis);
     bool is_influenced(int index, double s, double t, double u);
     int get_point_index(int i, int j, int k);
+    std::vector<int> get_ijk(int index);
 
     NodePath _np;
     NodePath _render;

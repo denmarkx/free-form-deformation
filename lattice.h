@@ -19,7 +19,6 @@ public:
     pvector<int> get_edge_spans();
     pvector<LVector3f> get_lattice_vecs();
     LPoint3f get_control_point_pos(int i, const NodePath& other);
-    LPoint3f get_control_point_pos(int i, int j, int k, const NodePath& other);
     LPoint3f get_x0();
     int get_num_control_points();
 
