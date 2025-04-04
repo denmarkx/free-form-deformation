@@ -20,7 +20,10 @@ public:
     pvector<LVector3f> get_lattice_vecs();
     LPoint3f get_control_point_pos(int i, const NodePath& other);
     LPoint3f get_x0();
+    LPoint3f get_x1();
     int get_num_control_points();
+
+    bool point_in_range(LPoint3f& point);
 
 private:
     void create_point(LPoint3f point, const double radius, int i, int j, int k);

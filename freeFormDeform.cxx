@@ -141,7 +141,9 @@ void FreeFormDeform::update_vertices() {
         for (size_t i = 0; i < geom_node->get_num_geoms(); i++) {
             geom = geom_node->modify_geom(i);
             vertex_data = geom->modify_vertex_data();
-            transform_vertex(vertex_data, _selected_points[i]);
+            for (size_t j = 0; j < _selected_points.size(); j++) {
+                transform_vertex(vertex_data, _selected_points[j]);
+            }
             geom->set_vertex_data(vertex_data);
             geom_node->set_geom(i, geom);
         }
@@ -171,6 +173,9 @@ void FreeFormDeform::process_node() {
 
     int row = 0;
 
+    LVector3f x0 = _lattice->get_x0();
+    LVector3f x1 = _lattice->get_x1();
+
     for (size_t i = 0; i < collection.get_num_paths(); i++) {
         geom_node = DCAST(GeomNode, collection.get_path(i).node());
         for (size_t j = 0; j < geom_node->get_num_geoms(); j++) {
@@ -193,6 +198,12 @@ void FreeFormDeform::process_node() {
                 vertex_object_space.push_back(vertex);
                 vertex_object_space.push_back(LPoint3f(s, t, u));
                 _default_vertex_ws_os.push_back(vertex_object_space);
+
+                // We do not care about vertices that aren't within our lattice.
+                if (!_lattice->point_in_range(vertex)) {
+                    row++;
+                    continue;
+                }
 
                 // We're going to determine if this vertex is modified by a control point.
                 for (size_t ctrl_i = 0; ctrl_i < _lattice->get_num_control_points(); ctrl_i++) {
