@@ -245,6 +245,7 @@ AsyncTask::DoneStatus FreeFormDeform::drag_task(GenericAsyncTask* task, void* ar
     // Ignore if there's nothing selected.
     if (ffd->_selected_points.size() == 0) {
         ffd->_object_handles->set_active(false);
+        ffd->_object_handles->clear_node_paths();
         return AsyncTask::DS_again;
     }
 
@@ -311,7 +312,7 @@ void FreeFormDeform::handle_click(const Event* event, void* args) {
     control_point.set_color(0, 1, 0, 1);
 
     // Need to actually get the proper NodePath for this:
-    ffd->_object_handles->set_node_path(control_point);
+    ffd->_object_handles->add_node_path(control_point);
 }
 
 void FreeFormDeform::setup_clicker(WindowFramework &window) {

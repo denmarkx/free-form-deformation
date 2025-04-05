@@ -1,8 +1,18 @@
 #include "objectHandles.h"
 
 ObjectHandles::ObjectHandles(NodePath &np, NodePath mouse_np, NodePath camera_np, Camera *camera) : NodePath("ObjectHandles") {
-    set_node_path(np);
     set_active(false);
+
+    // Holder for all of our selected NPs:
+    _np_obj_node = new NodePath("np_holder");
+    _np_obj_node->reparent_to(*this);
+
+    // Holder for our plane and line axis controls:
+    _control_node = new NodePath("control_holder");
+    _control_node->reparent_to(*this);
+    
+    // Add the np if we were given it:
+    add_node_path(np);
 
     _camera_np = camera_np;
     _camera = camera;
@@ -48,8 +58,19 @@ ObjectHandles::~ObjectHandles() {
 }
 
 void ObjectHandles::cleanup() {
-    // Everything was originally parented to ourselves..
-    // so we (shouldn't) have to manually call this on our children.
+    // Detach _np_obj_node's children:
+    for (size_t i = 0; i < _np_obj_node->get_num_children(); i++) {
+        _np_obj_node->get_child(i).detach_node();
+    }
+
+    // Remove our holders:
+    _np_obj_node->remove_node();
+    _control_node->remove_node();
+
+    delete _np_obj_node;
+    delete _control_node;
+
+    // Now remove ourselves:
     remove_node();
 }
 
@@ -106,7 +127,7 @@ void ObjectHandles::rebuild() {
     select_all_plane.set_billboard_point_eye(1);
 
     for (NodePath& planes : _axis_plane_nps) {
-        planes.reparent_to(*this);
+        planes.reparent_to(*_control_node);
     }
 
     // XYZ Line Segments
@@ -119,7 +140,7 @@ void ObjectHandles::rebuild() {
         line_segs.draw_to(draw_point);
         line_segs.set_thickness(get_thickness());
 
-        line_seg_np = attach_new_node(line_segs.create());
+        line_seg_np = _control_node->attach_new_node(line_segs.create());
         line_seg_np.set_tag("axis", std::to_string(i));
 
         // On hover, we set the color via set_color on the NP.
@@ -136,7 +157,7 @@ void ObjectHandles::rebuild() {
 
     // Some CollisionRay implementations (like FFD's clicker) may pick up things from
     // the object handles. For that reason, we set the collide mask to a dummy.
-    NodePathCollection npc = find_all_matches("**/+GeomNode");
+    NodePathCollection npc = _control_node->find_all_matches("**/+GeomNode");
     NodePath path;
     for (size_t i = 0; i < npc.get_num_paths(); i++) {
         path = npc.get_path(i);
@@ -273,7 +294,7 @@ void ObjectHandles::update_scale(LMatrix4 &proj_mat) {
     LPoint3f point_3d;
     point_3d = _camera_np.get_relative_point(_np, point_3d);
     LVecBase4f point_cam = proj_mat.xform(LVecBase4f(point_3d[0], point_3d[1], point_3d[2], 1.0));
-    set_scale(point_cam[3] * 0.4);
+    _control_node->set_scale(point_cam[3] * 0.4);
 }
 
 /*
@@ -326,7 +347,7 @@ AsyncTask::DoneStatus ObjectHandles::mouse_drag_task(GenericAsyncTask* task, voi
     NodePath parent = o_handle->get_parent();
 
     // https://discourse.panda3d.org/t/super-fast-mouse-ray-collisions-with-ground-plane/5022
-    LPoint3f pos = o_handle->_np.get_pos(parent);
+    LPoint3f pos = o_handle->_np_obj_node->get_pos(parent);
 
     o_handle->_camera->get_lens()->extrude(o_handle->_mouse_watcher->get_mouse(), _near, _far);
 
@@ -354,7 +375,8 @@ AsyncTask::DoneStatus ObjectHandles::mouse_drag_task(GenericAsyncTask* task, voi
         default:
             pos[axis] = pos3d[axis];
     }
-    o_handle->_np.set_pos(parent, pos);
+
+    o_handle->set_pos(pos);
 
     return AsyncTask::DS_cont;
 }
@@ -481,17 +503,43 @@ bool ObjectHandles::is_active() {
     return _active;
 }
 
-void ObjectHandles::set_node_path(NodePath &np) {
-    _np = np;
-
-    if (_np.is_empty()) {
+/*
+Adds NodePath to be tracked with object handles.
+Will not add if given np is empty.
+*/
+void ObjectHandles::add_node_path(NodePath &np) {
+    if (np.is_empty()) {
         return;
     }
 
-    reparent_to(np);
+    // Reparent:
+    reparent_to(np.get_parent().get_parent());
+
+    // Keep track of who is selected:
+    _nps[np.get_parent()].push_back(np);
+
+    // Next, reparent them to the selected NP holder:
+    np.wrt_reparent_to(*_np_obj_node);
+
+    // Reposition our handles to the center of all of our NPs.
+    PT(BoundingVolume) b_volume = _np_obj_node->get_bounds();
+    CPT(BoundingSphere) b_sphere = b_volume->as_bounding_sphere();
+
+    _control_node->set_pos(b_sphere->get_center());
     rebuild();
 }
 
-NodePath ObjectHandles::get_node_path() {
-    return _np;
+/*
+Removes all tracked NodePaths.
+*/
+void ObjectHandles::clear_node_paths() {
+    // Reparent our children back to their original parent nodes.
+    for (pmap<NodePath, pvector<NodePath>>::iterator it = _nps.begin(); it != _nps.end(); it++) {
+        for (NodePath& child : it->second) {
+            child.wrt_reparent_to(it->first);
+        }
+    }
+
+    // Then clear our map.
+    _nps.clear();
 }

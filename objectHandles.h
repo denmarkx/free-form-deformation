@@ -14,6 +14,7 @@
 #include "cardMaker.h"
 #include "planeNode.h"
 #include "loader.h"
+#include "boundingSphere.h"
 
 class ObjectHandles : public NodePath {
 public:
@@ -31,9 +32,8 @@ public:
     void set_active(bool active);
     bool is_active();
 
-    void set_node_path(NodePath &np);
-    NodePath get_node_path();
-
+    void add_node_path(NodePath &np);
+    void clear_node_paths();
 
 private:
     enum AxisType {
@@ -81,6 +81,8 @@ private:
     NodePath _trackball_np;
     NodePath _hover_line_np;
     NodePath _active_line_np;
+    NodePath* _np_obj_node;
+    NodePath* _control_node;
 
     PT(Trackball) _trackball;
     PT(MouseWatcher) _mouse_watcher;
@@ -93,5 +95,7 @@ private:
 
     pvector<NodePath> _axis_nps;
     pvector<NodePath> _axis_plane_nps;
+
+    pmap<NodePath, pvector<NodePath>> _nps;
 };
 #endif
