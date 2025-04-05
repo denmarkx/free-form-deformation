@@ -185,6 +185,11 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
     // Args is the ObjectHandles instance.
     ObjectHandles* o_handle = (ObjectHandles*)args;
 
+    // Ignore if there is no mouse:
+    if (!o_handle->_mouse_watcher->has_mouse()) {
+        return AsyncTask::DS_again;
+    }
+
     // Ignore if we have clicked one a line:
     if (!o_handle->_active_line_np.is_empty()) {
         return AsyncTask::DS_again;
@@ -405,6 +410,11 @@ void ObjectHandles::handle_drag_done(const Event* event, void* args) {
 void ObjectHandles::handle_click(const Event* event, void* args) {
     // Args is ObjectHandles instance.
     ObjectHandles* o_handle = (ObjectHandles*)(args);
+
+    // Ignore if there is no mouse:
+    if (!o_handle->_mouse_watcher->has_mouse()) {
+        return;
+    }
 
     NodePath active_line = o_handle->_hover_line_np;
 
