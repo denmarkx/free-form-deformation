@@ -40,8 +40,49 @@ void Lattice::create_control_points(const double radius) {
 }
 
 void Lattice::push_point_edge(int index) {
-    std::cout << index << " -> " << num_segments << "\n";
     point_to_edge_vertex[index].push_back(num_segments);
+}
+
+void Lattice::push_point_relationship(int index, int adjacent_index) {
+    // Add the adjacent index to the regular vector.
+    point_map[index].push_back(adjacent_index);
+
+    pvector<int> index_v = point_map[index];
+
+    // Check if we have anything in our holding vector:
+    if (point_map_future[index].size() > 0) {
+        // Yes, add them all to point_map if they aren't in it.
+        int future_index;
+        for (size_t i = 0; i < point_map_future[index].size(); i++) {
+            future_index = point_map_future[index][i];
+            index_v = point_map[index];
+  
+            // Ensure the future index is still not in the future:
+            if (future_index > index) {
+                break;
+            }
+
+            if (std::find(index_v.begin(), index_v.end(), future_index) == index_v.end()) {
+                point_map[index].push_back(future_index);
+            }
+        }
+    }
+
+    // Ignore if not found:
+    //if (point_map.find(adjacent_index) == point_map.end()) {
+    if (point_map.count(adjacent_index) == 0) {
+        // We could either do an iteration each function call, but we'll
+        // just hold this for later.
+        point_map_future[adjacent_index].push_back(index);
+    }
+
+    // Check if index is in adjacent_index's vector:
+    pvector<int> adj_index_v = point_map[adjacent_index];
+
+    // Not in here..let's add.
+    if (std::find(adj_index_v.begin(), adj_index_v.end(), index) == adj_index_v.end()) {
+        point_map[adjacent_index].push_back(index);
+    }
 }
 
 void Lattice::create_edges() {
@@ -67,6 +108,18 @@ void Lattice::create_edges() {
     // Forward (+y)
     // Right (+x)
     // Down (-z)
+
+    // Pre-traverse total (ugh):
+    std::vector<int> point_future;
+    pvector<int> point_relations;
+    for (size_t i = 0; i < total; i++) {
+        point_future.clear();
+        point_relations.clear();
+
+        point_map_future[i] = point_future;
+        point_map[i] = point_relations;
+    }
+
     for (size_t i = 0; i < total; i++) {
         // Get current control point:
         pnt = _control_points[i];
@@ -74,6 +127,12 @@ void Lattice::create_edges() {
         // Place our vertex at the current point:
         _edges.move_to(pnt.get_pos());
         num_segments++;
+
+        // Add to vector:
+        push_point_edge(i);
+
+        // We love ourselves:
+        push_point_relationship(i, i);
 
         // Forward:
         // +y is sequentially sorted, so there isn't much thought that goes into it.
@@ -85,13 +144,17 @@ void Lattice::create_edges() {
             _edges.draw_to(pnt.get_pos());
             num_segments++;
 
-            // Add to vector:
-            push_point_edge(i+1);
-
             // Move back to where we were.
             pnt = _control_points[i];
             _edges.move_to(pnt.get_pos());
             num_segments++;
+            push_point_edge(i);
+
+            // Add to vector:
+            //push_point_edge(i);
+            //push_point_edge(i-1);
+
+            push_point_relationship(i, i + 1);
         }
 
         // Right:
@@ -102,15 +165,15 @@ void Lattice::create_edges() {
             pnt = _control_points[i + m_n];
             _edges.draw_to(pnt.get_pos());
             num_segments++;
-
-            // Add to vector:
-            push_point_edge(i+m_n);
-
+            
             // It's important that we move LineSeg's internal "vertex"
             // back to where we were.
             pnt = _control_points[i];
             _edges.move_to(pnt.get_pos());
             num_segments++;
+            push_point_edge(i);
+
+            push_point_relationship(i, i + m_n);
         }
 
         // Down:
@@ -145,21 +208,33 @@ void Lattice::create_edges() {
         num_segments++;
 
         // Add to vector:
-        push_point_edge(i-(l+1));
+        //push_point_edge(i-(l+1));
 
         // Move back:
         pnt = _control_points[i];
         _edges.move_to(pnt.get_pos());
         num_segments++;
+
+        push_point_relationship(i, i - (l+1));
+
     }
 
     // Attach to self.
     attach_new_node(_edges.create());
-    
-    pvector<int> test = point_to_edge_vertex[0];
-    for (int i = 0; i < test.size(); i++) {
-        _edges.set_vertex(test[i]-1, -2, -2, -2);
+
+    pvector<int> t = point_map[0];
+    for (int i = 0; i < t.size(); i++) {
+        std::cout << "neighbor: " << t[i] << "\n";
+        std::cout << "  0th vertex: " << point_to_edge_vertex[t[i]][0] << "\n";
+        for (int j = 0; j < point_to_edge_vertex[t[i]].size(); j++) {
+            if (t[i] == 0) {
+                continue;
+            }
+            _edges.set_vertex(point_to_edge_vertex[t[i]][0]-1, -2, -2, -2);
+        }
     }
+    //_edges.set_vertex(4, -2, -2, -2);
+
 }
 
 NodePath& Lattice::get_control_point(int index) {

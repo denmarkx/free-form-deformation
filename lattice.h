@@ -34,6 +34,7 @@ private:
     void reset_edges();
     void rebuild();
     void push_point_edge(int index);
+    void push_point_relationship(int index, int adjacent_index);
 
     Loader *_loader = Loader::get_global_ptr();
 
@@ -50,5 +51,10 @@ private:
     // control point index -> line segment index
     pmap<int, pvector<int>> point_to_edge_vertex;
 
-    int num_segments = 0;
+    // control point index -> control point index
+    pmap<int, pvector<int>> point_map;
+
+    std::map<int, std::vector<int>> point_map_future;
+
+    int num_segments = -1;
 };
