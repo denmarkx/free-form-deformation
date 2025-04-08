@@ -110,14 +110,11 @@ void Lattice::create_edges() {
     // Down (-z)
 
     // Pre-traverse total (ugh):
-    std::vector<int> point_future;
-    pvector<int> point_relations;
+    pvector<int> empty_vec;
     for (size_t i = 0; i < total; i++) {
-        point_future.clear();
-        point_relations.clear();
-
-        point_map_future[i] = point_future;
-        point_map[i] = point_relations;
+        point_map_future[i] = empty_vec;
+        point_map[i] = empty_vec;
+        point_to_edge_vertex[i] = empty_vec;
     }
 
     for (size_t i = 0; i < total; i++) {
@@ -143,17 +140,9 @@ void Lattice::create_edges() {
             pnt = _control_points[i + 1];
             _edges.draw_to(pnt.get_pos());
             num_segments++;
-
-            // Move back to where we were.
-            pnt = _control_points[i];
-            _edges.move_to(pnt.get_pos());
-            num_segments++;
-            push_point_edge(i);
+            point_to_edge_vertex[i + 1].push_back(num_segments);
 
             // Add to vector:
-            //push_point_edge(i);
-            //push_point_edge(i-1);
-
             push_point_relationship(i, i + 1);
         }
 
@@ -161,17 +150,20 @@ void Lattice::create_edges() {
         // From the current vertex, we move +x by (m+1)*(n+1).
         // We can check for an illegal move by comparing the number of points.
         if (i + m_n < _control_points.size()) {
+            // Move back to where we were..if we moved..
+            pnt = _control_points[i];
+            if (_edges.get_current_position() != pnt.get_pos()) {
+                _edges.move_to(pnt.get_pos());
+                num_segments++;
+                push_point_edge(i);
+            }
+
             // i -> i + (m+1)*(n+1):
             pnt = _control_points[i + m_n];
             _edges.draw_to(pnt.get_pos());
             num_segments++;
-            
-            // It's important that we move LineSeg's internal "vertex"
-            // back to where we were.
-            pnt = _control_points[i];
-            _edges.move_to(pnt.get_pos());
-            num_segments++;
-            push_point_edge(i);
+
+            point_to_edge_vertex[i+m_n].push_back(num_segments);
 
             push_point_relationship(i, i + m_n);
         }
@@ -202,18 +194,21 @@ void Lattice::create_edges() {
             continue;
         }
 
+
+        // Move back to where we were..if we moved..
+        pnt = _control_points[i];
+        if (_edges.get_current_position() != pnt.get_pos()) {
+            _edges.move_to(pnt.get_pos());
+            num_segments++;
+            push_point_edge(i);
+        }
+
         // Draw:
         pnt = _control_points[i - (l + 1)];
         _edges.draw_to(pnt.get_pos());
         num_segments++;
 
-        // Add to vector:
-        //push_point_edge(i-(l+1));
-
-        // Move back:
-        pnt = _control_points[i];
-        _edges.move_to(pnt.get_pos());
-        num_segments++;
+        point_to_edge_vertex[i - (l + 1)].push_back(num_segments);
 
         push_point_relationship(i, i - (l+1));
 
@@ -222,19 +217,16 @@ void Lattice::create_edges() {
     // Attach to self.
     attach_new_node(_edges.create());
 
-    pvector<int> t = point_map[0];
+    /*pvector<int> t = point_map[23];
     for (int i = 0; i < t.size(); i++) {
         std::cout << "neighbor: " << t[i] << "\n";
-        std::cout << "  0th vertex: " << point_to_edge_vertex[t[i]][0] << "\n";
         for (int j = 0; j < point_to_edge_vertex[t[i]].size(); j++) {
-            if (t[i] == 0) {
-                continue;
+            if (t[i] == 23) {
+                std::cout << point_to_edge_vertex[23][j] << "\n";
+                _edges.set_vertex(point_to_edge_vertex[23][j], -2, -2, -2);
             }
-            _edges.set_vertex(point_to_edge_vertex[t[i]][0]-1, -2, -2, -2);
         }
-    }
-    //_edges.set_vertex(4, -2, -2, -2);
-
+    }*/
 }
 
 NodePath& Lattice::get_control_point(int index) {

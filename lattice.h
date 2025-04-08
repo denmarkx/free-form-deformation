@@ -54,7 +54,7 @@ private:
     // control point index -> control point index
     pmap<int, pvector<int>> point_map;
 
-    std::map<int, std::vector<int>> point_map_future;
+    pmap<int, pvector<int>> point_map_future;
 
     int num_segments = -1;
 };
