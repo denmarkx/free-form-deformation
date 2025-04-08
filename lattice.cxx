@@ -15,12 +15,15 @@ void Lattice::rebuild() {
     
     calculate_lattice_vec();
     create_control_points(radius);
+    create_edges();
 }
 
 void Lattice::create_control_points(const double radius) {
     reset_control_points();
+    reset_edges();
 
     LPoint3f point;
+    _edges = LineSegs("lattice_edges");
 
     for (size_t i = 0; i <= _plane_spans[0]; i++) {
         for (size_t j = 0; j <= _plane_spans[1]; j++) {
@@ -36,8 +39,134 @@ void Lattice::create_control_points(const double radius) {
     }
 }
 
+void Lattice::push_point_edge(int index) {
+    std::cout << index << " -> " << num_segments << "\n";
+    point_to_edge_vertex[index].push_back(num_segments);
+}
+
+void Lattice::create_edges() {
+    // TODO: there's a lot of dead vertices here because i didn't realize at the time that
+    // both move and draw to pushes back on segs. an optimal approach would be to try and 
+    // connect multiple line segments to a given vertex.
+
+    int l = _plane_spans[2];
+
+    // Get l*n and m*n (+1 account for 0 start).
+    int l_n = (_plane_spans[0] + 1) * (_plane_spans[2] + 1);
+    int m_n = (_plane_spans[1] + 1) * (_plane_spans[2] + 1);
+
+    // Get the total (which is l_n * (m+1)).
+    int total = l_n * (_plane_spans[1] + 1);
+
+    // Control Point:
+    NodePath pnt;
+
+    bool go_down = false;
+
+    // This next for loop is divided into three drawing scenarios for edges:
+    // Forward (+y)
+    // Right (+x)
+    // Down (-z)
+    for (size_t i = 0; i < total; i++) {
+        // Get current control point:
+        pnt = _control_points[i];
+
+        // Place our vertex at the current point:
+        _edges.move_to(pnt.get_pos());
+        num_segments++;
+
+        // Forward:
+        // +y is sequentially sorted, so there isn't much thought that goes into it.
+        // We just want to make sure we don't go forward at the very end.
+        // Check if (i+1) is a factor of (l+1). If it is, then we DON'T go forward.
+        if ((i + 1) % (l + 1) != 0) {
+            // We move forward by 1.
+            pnt = _control_points[i + 1];
+            _edges.draw_to(pnt.get_pos());
+            num_segments++;
+
+            // Add to vector:
+            push_point_edge(i+1);
+
+            // Move back to where we were.
+            pnt = _control_points[i];
+            _edges.move_to(pnt.get_pos());
+            num_segments++;
+        }
+
+        // Right:
+        // From the current vertex, we move +x by (m+1)*(n+1).
+        // We can check for an illegal move by comparing the number of points.
+        if (i + m_n < _control_points.size()) {
+            // i -> i + (m+1)*(n+1):
+            pnt = _control_points[i + m_n];
+            _edges.draw_to(pnt.get_pos());
+            num_segments++;
+
+            // Add to vector:
+            push_point_edge(i+m_n);
+
+            // It's important that we move LineSeg's internal "vertex"
+            // back to where we were.
+            pnt = _control_points[i];
+            _edges.move_to(pnt.get_pos());
+            num_segments++;
+        }
+
+        // Down:
+        // We check if i, i-1, or i-2 % 9 = 0
+        // For this one, we go -z. To validate for a legal move,
+        // we check if n, n-1, or n-2 (where n=i-j) is a factor of m_n.
+        // If any of them ARE a factor, we do NOT go down.
+        go_down = false;
+
+        // ..ensure we've above l.
+        if (i < l) {
+            continue;
+        }
+
+        // n,n-1,n-2 check:
+        for (size_t j = 0; j <= l; j++) {
+            go_down = true;
+            if ((i - j) % m_n == 0) {
+                go_down = false;
+                break;
+            }
+        }
+
+        // This is the end so we can continue on here:
+        if (!go_down) {
+            continue;
+        }
+
+        // Draw:
+        pnt = _control_points[i - (l + 1)];
+        _edges.draw_to(pnt.get_pos());
+        num_segments++;
+
+        // Add to vector:
+        push_point_edge(i-(l+1));
+
+        // Move back:
+        pnt = _control_points[i];
+        _edges.move_to(pnt.get_pos());
+        num_segments++;
+    }
+
+    // Attach to self.
+    attach_new_node(_edges.create());
+    
+    pvector<int> test = point_to_edge_vertex[0];
+    for (int i = 0; i < test.size(); i++) {
+        _edges.set_vertex(test[i]-1, -2, -2, -2);
+    }
+}
+
 NodePath& Lattice::get_control_point(int index) {
     return _control_points[index];
+}
+
+void Lattice::reset_edges() {
 }
 
 void Lattice::set_control_point_pos(LPoint3f pos, int index) {
@@ -79,6 +208,14 @@ void Lattice::create_point(LPoint3f point, const double radius, int i, int j, in
     c_point.set_scale(0.05 * radius);
     c_point.set_color(1, 0, 1, 1);
     c_point.set_tag("control_point", std::to_string(_control_points.size()));
+
+    TextNode *tn = new TextNode("tn");
+    tn->set_text(std::to_string(_control_points.size()));
+    tn->set_text_color(1, 1, 0, 1);
+    tn->set_text_scale(0.15);
+    NodePath np = this->attach_new_node(tn->generate());
+    np.set_pos(point + LVecBase3(0, 0, 0.01));
+    np.set_billboard_point_eye();
 
     _control_points.push_back(c_point);
 }
