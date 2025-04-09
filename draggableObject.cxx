@@ -16,8 +16,11 @@ DraggableObject::DraggableObject(NodePath& parent, int traverse_num) {
 
 /*
 Initializer for DraggableObject. Watches for all nodes with the given tag name set via setTag.
+parent is the highest level node for which we seek tag. Pass render if nothing else.
 */
-DraggableObject::DraggableObject(std::string tag) {
+
+DraggableObject::DraggableObject(NodePath& parent, std::string tag) {
+    _parent = parent;
     _tag = tag;
 }
 
@@ -69,6 +72,40 @@ void DraggableObject::traverse_children(NodePathCollection& children, int count)
 
         // Otherwise, keep going.
         traverse_children(children.get_path(i).get_children(), count + 1);
+    }
+}
+
+/*
+Object has been selected. Children may inherit for additional functionality.
+*/
+void DraggableObject::select(NodePath& np) {
+    np.set_color_scale(0, 1, 0, 1);
+}
+
+/*
+Object has been deselected. Children may inherit for additional functionality.
+*/
+void DraggableObject::deselect(NodePath& np) {
+    np.clear_color_scale();
+}
+
+/*
+Object and all managed children has been deselected. Internally calls
+deselect(NodePath) for each node in the registered nodes vector.
+
+If DraggableObject was initialized via a tag, traverses the scenegraph at the parent
+and calls deselect(NodePath) on all nodes that had the tag.
+*/
+void DraggableObject::deselect() {
+    // Where DraggableObject(NodePath)
+    for (NodePath& np : _nodes) {
+        deselect(np);
+    }
+
+    // Where DraggableObject(string)
+    NodePathCollection collection = _parent.find_all_matches("**/=" + _tag);
+    for (size_t i = 0; i < collection.get_num_paths(); i++) {
+        deselect(collection.get_path(i));
     }
 }
 

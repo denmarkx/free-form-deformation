@@ -11,6 +11,7 @@
 #include "genericAsyncTask.h"
 #include "asyncTaskManager.h"
 #include "draggableObject.h"
+#include "objectHandles.h"
 
 class DraggableObjectManager {
 public:
@@ -21,6 +22,7 @@ public:
     void setup_mouse(std::string click_button);
     void register_object(DraggableObject& draggable);
     void click();
+    void deselect_all();
 
     static DraggableObjectManager* get_global_ptr();
 
@@ -44,8 +46,10 @@ private:
     EventHandler* event_handler = EventHandler::get_global_event_handler();
     AsyncTaskManager* task_mgr = AsyncTaskManager::get_global_ptr();
 
+    ObjectHandles* object_handles;
+
     std::vector<DraggableObject> _objects;
-    std::vector<std::string> _tags;
+    std::map<std::string, DraggableObject> _tag_map;
 
     static DraggableObjectManager* _global_ptr;
 };

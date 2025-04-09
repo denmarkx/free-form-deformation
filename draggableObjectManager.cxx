@@ -35,7 +35,7 @@ void DraggableObjectManager::register_object(DraggableObject& draggable) {
     // Check if this has a tag:
     if (draggable.is_watching_tag()) {
         // Keep track:
-        _tags.push_back(draggable.get_tag());
+        _tag_map[draggable.get_tag()] = draggable;
     }
 }
 
@@ -62,6 +62,14 @@ void DraggableObjectManager::setup_picking_objects() {
     // Then a handler queue:
     _handler_queue = new CollisionHandlerQueue();
     _traverser->add_collider(picker_node, _handler_queue);
+
+    // also our object handles..
+    object_handles = new ObjectHandles(
+        NodePath(),
+        _mouse_np,
+        _camera_np,
+        _camera
+    );
 }
 
 /*
@@ -78,20 +86,49 @@ void DraggableObjectManager::click() {
     _traverser->traverse(_parent);
     _handler_queue->sort_entries();
 
-    // Ignore if we got nothing.
+    // We got nothing.
     if (_handler_queue->get_num_entries() == 0) {
+        // If the user clicked off, deselect everything
+        deselect_all();
         return;
     }
+
+    // Enable our object handles:
+    object_handles->set_active(true);
 
     // Get our top entry:
     PT(CollisionEntry) entry = _handler_queue->get_entry(0);
     NodePath into_np = entry->get_into_node_path();
 
+    DraggableObject draggable;
+
     // Check to see if we have any of special tags:
-    for (std::string tag : _tags) {
-        if (into_np.has_net_tag(tag)) {
-            std::cout << "has tag" << "\n";
+    for (std::map<std::string, DraggableObject>::iterator it = _tag_map.begin(); it != _tag_map.end(); it++) {
+        if (into_np.has_net_tag(it->first)) {
+            draggable = it->second;
+            draggable.select(into_np);
+
+            object_handles->add_node_path(into_np);
+            return;
         }
+    }
+    
+    // If we made is this far, that means that we didn't have a tag match.
+    // Let's compare directly to our managed objects.
+    // TODO
+}
+
+
+/*
+*/
+void DraggableObjectManager::deselect_all() {
+    // Stop our handles:
+    object_handles->clear_node_paths();
+    object_handles->set_active(false);
+
+    // Run deselect on all our managed nodes:
+    for (DraggableObject& draggable : _objects) {
+        draggable.deselect();
     }
 }
 
