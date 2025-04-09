@@ -239,6 +239,7 @@ void Lattice::update_edges(int index) {
 }
 
 void Lattice::reset_edges() {
+    _edges.reset();
 }
 
 void Lattice::set_control_point_pos(LPoint3f pos, int index) {
