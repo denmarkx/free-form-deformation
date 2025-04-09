@@ -85,6 +85,7 @@ NodePath ObjectHandles::create_plane_np(LPoint3f pos, LPoint3f hpr, LColor color
     plane_np.set_pos(pos);
     plane_np.set_hpr(hpr);
     plane_np.set_color(color);
+    plane_np.set_two_sided(1);
 
     _axis_plane_nps.push_back(plane_np);
     return plane_np;
@@ -296,10 +297,15 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
 Updates the scale of the object handle based on the camera.
 */
 void ObjectHandles::update_scale(LMatrix4 &proj_mat) {
+    // Ignore if we're not active.
+    if (!_active) {
+        return;
+    }
+
     LPoint3f point_3d;
     point_3d = _camera_np.get_relative_point(_np, point_3d);
     LVecBase4f point_cam = proj_mat.xform(LVecBase4f(point_3d[0], point_3d[1], point_3d[2], 1.0));
-    _control_node->set_scale(point_cam[3] * 0.4);
+    _control_node->set_scale(point_cam[3] * 0.1);
 }
 
 /*
@@ -361,24 +367,37 @@ AsyncTask::DoneStatus ObjectHandles::mouse_drag_task(GenericAsyncTask* task, voi
         parent.get_relative_point(o_handle->_camera_np, _near),
         parent.get_relative_vector(o_handle->_camera_np, _far));
 
+    // previous_pos3d is pos3d if its all zeros.
+    if (o_handle->previous_pos3d.almost_equal(LPoint3f::zero())) {
+        o_handle->previous_pos3d = pos3d;
+    }
+
+    // We don't actually want to set the o_handle's pos to the intersection one.
+    // This'll cause the node to jump to the exact pos. Instead, we move pos relative to pos3d.
+    // For this, it's just the delta.
+    LPoint3f delta_pos3d = pos3d - o_handle->previous_pos3d;
+
+    // Reset previous_pos3d.
+    o_handle->previous_pos3d = pos3d;
+
     switch (axis) {
         case AxisType::AT_all:
-            pos = pos3d;
+            pos += delta_pos3d;
             break;
         case AxisType::AT_xy:
-            pos[0] = pos3d[0];
-            pos[1] = pos3d[1];
+            pos[0] += delta_pos3d[0];
+            pos[1] += delta_pos3d[1];
             break;
         case AxisType::AT_xz:
-            pos[0] = pos3d[0];
-            pos[2] = pos3d[2];
+            pos[0] += delta_pos3d[0];
+            pos[2] += delta_pos3d[2];
             break;
         case AxisType::AT_yz:
-            pos[1] = pos3d[1];
-            pos[2] = pos3d[2];
+            pos[1] += delta_pos3d[1];
+            pos[2] += delta_pos3d[2];
             break;
         default:
-            pos[axis] = pos3d[axis];
+            pos[axis] += delta_pos3d[axis];
     }
 
     o_handle->set_pos(pos);
@@ -405,6 +424,9 @@ void ObjectHandles::handle_drag_done(const Event* event, void* args) {
 
     // Update camera movement:
     o_handle->enable_camera_movement();
+    
+    // Reset previous_pos3d:
+    o_handle->previous_pos3d = LPoint3f::zero();
 }
 
 void ObjectHandles::handle_click(const Event* event, void* args) {

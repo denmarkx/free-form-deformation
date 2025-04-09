@@ -92,6 +92,7 @@ private:
     PT(Camera) _camera;
 
     LMatrix4f _cam_mat;
+    LPoint3f previous_pos3d;
 
     pvector<NodePath> _axis_nps;
     pvector<NodePath> _axis_plane_nps;
