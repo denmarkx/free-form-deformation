@@ -12,6 +12,7 @@ public:
 
     void create_control_points(const double radius);
     void calculate_lattice_vec();
+    void update_edges(int index);
 
     void set_edge_spans(int size_x, int size_y, int size_z);
     void set_control_point_pos(LPoint3f pos, int index);

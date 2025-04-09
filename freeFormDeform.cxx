@@ -148,6 +148,11 @@ void FreeFormDeform::update_vertices() {
             geom_node->set_geom(i, geom);
         }
     }
+
+    // Also updates the lattice:
+    for (size_t i : _selected_points) {
+        _lattice->update_edges(i);
+    }
 }
 
 void FreeFormDeform::process_node() {

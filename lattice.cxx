@@ -216,21 +216,26 @@ void Lattice::create_edges() {
 
     // Attach to self.
     attach_new_node(_edges.create());
-
-    /*pvector<int> t = point_map[23];
-    for (int i = 0; i < t.size(); i++) {
-        std::cout << "neighbor: " << t[i] << "\n";
-        for (int j = 0; j < point_to_edge_vertex[t[i]].size(); j++) {
-            if (t[i] == 23) {
-                std::cout << point_to_edge_vertex[23][j] << "\n";
-                _edges.set_vertex(point_to_edge_vertex[23][j], -2, -2, -2);
-            }
-        }
-    }*/
 }
 
 NodePath& Lattice::get_control_point(int index) {
     return _control_points[index];
+}
+
+/*
+Updates the adjacent edges to match the given control point.
+*/
+
+void Lattice::update_edges(int index) {
+    // Update the edges:
+    pvector<int> adjacent_points = point_map[index];
+    for (int i = 0; i < adjacent_points.size(); i++) {
+        for (int j = 0; j < point_to_edge_vertex[adjacent_points[i]].size(); j++) {
+            if (adjacent_points[i] == index) {
+                _edges.set_vertex(point_to_edge_vertex[index][j], get_control_point_pos(index, *this));
+            }
+        }
+    }
 }
 
 void Lattice::reset_edges() {
@@ -275,15 +280,6 @@ void Lattice::create_point(LPoint3f point, const double radius, int i, int j, in
     c_point.set_scale(0.05 * radius);
     c_point.set_color(1, 0, 1, 1);
     c_point.set_tag("control_point", std::to_string(_control_points.size()));
-
-    TextNode *tn = new TextNode("tn");
-    tn->set_text(std::to_string(_control_points.size()));
-    tn->set_text_color(1, 1, 0, 1);
-    tn->set_text_scale(0.15);
-    NodePath np = this->attach_new_node(tn->generate());
-    np.set_pos(point + LVecBase3(0, 0, 0.01));
-    np.set_billboard_point_eye();
-
     _control_points.push_back(c_point);
 }
 
