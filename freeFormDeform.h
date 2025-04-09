@@ -31,7 +31,7 @@ public:
 
 private:
     void process_node();
-    void transform_vertex(GeomVertexData* data, int index);
+    void transform_vertex(GeomVertexData* data, GeomNode* geom, int index);
 
     static void handle_click(const Event* event, void* args);
     static AsyncTask::DoneStatus drag_task(GenericAsyncTask* task, void* data);
@@ -63,13 +63,18 @@ private:
 
     ClickerArgs* _c_args;
 
-    pvector<pvector<LPoint3f>> _default_vertex_ws_os; // Default vertex, default object space vertex.
-
     pvector<PT(GeomNode)> _geom_nodes;
-    pvector<int> _selected_points;
-    pmap<int, pvector<int>> _influenced_vertices;
+
+    // GeomNode -> {c_point : [vertex..]}
+    typedef pmap<int, pvector<int>> __internal_vertices;
+    pmap<PT(GeomNode), __internal_vertices> _influenced_vertices;
+
+    // GeomNode -> [[default_vertex_world_space, default_vertex_object_space]]
+    typedef pvector<pvector<LPoint3f>> __internal_default_vertices_pos;
+    pmap<PT(GeomNode), __internal_default_vertices_pos> _default_vertex_ws_os; // Default vertex, default object space vertex.
 
     ObjectHandles* _object_handles;
+    pvector<int> _selected_points;
 };
 
 typedef struct ClickerArgs {

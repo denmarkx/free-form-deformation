@@ -80,24 +80,26 @@ bool FreeFormDeform::is_influenced(int index, double s, double t, double u) {
     return bernstein(ijk[0], spans[0], s) * bernstein(ijk[1], spans[1], t) * bernstein(ijk[2], spans[2], u);
 }
 
-void FreeFormDeform::transform_vertex(GeomVertexData* data, int index) {
+void FreeFormDeform::transform_vertex(GeomVertexData* data, GeomNode* geom_node, int index) {
     GeomVertexWriter rewriter(data, "vertex");
 
     LPoint3f default_vertex, default_object_space; // (stu)
     LVector3f x_ffd;
 
-    pvector<int> influenced_arrays;
-    influenced_arrays = _influenced_vertices[index];
+    pvector<int> influenced_arrays = _influenced_vertices[geom_node][index];
+    pvector<LPoint3f> default_vertex_pos;
 
     int vertex = 0;
     for (int i = 0; i < influenced_arrays.size(); i++) {
         vertex = influenced_arrays[i];
+        default_vertex_pos = _default_vertex_ws_os[geom_node][vertex];
+
         rewriter.set_row(vertex);
 
-        default_vertex = _default_vertex_ws_os[vertex][0];
-        double s = _default_vertex_ws_os[vertex][1][0];
-        double t = _default_vertex_ws_os[vertex][1][1];
-        double u = _default_vertex_ws_os[vertex][1][2];
+        default_vertex = default_vertex_pos[0];
+        double s = default_vertex_pos[1][0];
+        double t = default_vertex_pos[1][1];
+        double u = default_vertex_pos[1][2];
 
         x_ffd = deform_vertex(s, t, u);
         rewriter.set_data3f(x_ffd);
@@ -142,7 +144,7 @@ void FreeFormDeform::update_vertices() {
             geom = geom_node->modify_geom(i);
             vertex_data = geom->modify_vertex_data();
             for (size_t j = 0; j < _selected_points.size(); j++) {
-                transform_vertex(vertex_data, _selected_points[j]);
+                transform_vertex(vertex_data, geom_node, _selected_points[j]);
             }
             geom->set_vertex_data(vertex_data);
             geom_node->set_geom(i, geom);
@@ -155,10 +157,18 @@ void FreeFormDeform::update_vertices() {
     }
 }
 
+/*
+*/
 void FreeFormDeform::process_node() {
-    _lattice->calculate_lattice_vec();
-
     NodePathCollection collection = _np.find_all_matches("**/+GeomNode");
+
+    // Ignore if there's nothing.
+    if (collection.get_num_paths() == 0) {
+        return;
+    }
+
+    // Begin by caculating stu based on our bounding box.
+    _lattice->calculate_lattice_vec();
 
     pvector<LVector3f> lattice_vec = _lattice->get_lattice_vecs();
     LVector3f S = lattice_vec[0];
@@ -202,7 +212,7 @@ void FreeFormDeform::process_node() {
 
                 vertex_object_space.push_back(vertex);
                 vertex_object_space.push_back(LPoint3f(s, t, u));
-                _default_vertex_ws_os.push_back(vertex_object_space);
+                _default_vertex_ws_os[geom_node].push_back(vertex_object_space);
 
                 // We do not care about vertices that aren't within our lattice.
                 if (!_lattice->point_in_range(vertex)) {
@@ -214,7 +224,7 @@ void FreeFormDeform::process_node() {
                 for (size_t ctrl_i = 0; ctrl_i < _lattice->get_num_control_points(); ctrl_i++) {
                     influenced = is_influenced(ctrl_i, s, t, u);
                     if (influenced) {
-                        _influenced_vertices[ctrl_i].push_back(row);
+                        _influenced_vertices[geom_node][ctrl_i].push_back(row);
                     }
                 }
                 row++;

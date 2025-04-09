@@ -497,6 +497,10 @@ void ObjectHandles::disable_camera_movement() {
 Enables mouse movement of the camera.
 */
 void ObjectHandles::enable_camera_movement() {
+    // Ignore redundant calls:
+    if (_trackball2Cam->get_node() != nullptr) {
+        return;
+    }
     _trackball2Cam->set_node(_trackball_node);
     _trackball->set_mat(_cam_mat);
 }

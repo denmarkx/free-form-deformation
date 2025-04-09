@@ -21,8 +21,8 @@ int main() {
     window->setup_trackball();
     window->enable_keyboard();
 
-    NodePath np = window->load_model(window->get_render(), "jack");
-    np.flatten_strong();
+    NodePath np = window->load_model(window->get_render(), "teapot");
+    //np.flatten_strong();
 
     ObjectHandles *oh = new ObjectHandles(NodePath(), window->get_mouse(), window->get_camera_group(), window->get_camera(0));
     oh->set_thickness(5);
