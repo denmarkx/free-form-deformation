@@ -331,6 +331,7 @@ void FreeFormDeform::handle_click(const Event* event, void* args) {
 }
 
 void FreeFormDeform::setup_clicker(WindowFramework &window) {
+    return;
    _traverser = new CollisionTraverser("FFD_Traverser");
 
     PT(CollisionNode) collision_node = new CollisionNode("mouse_ray");

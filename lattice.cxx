@@ -27,6 +27,8 @@ void Lattice::create_control_points(const double radius) {
             }
         }
     }
+
+    _dom->register_object(*this);
 }
 
 void Lattice::push_point_edge(int index) {

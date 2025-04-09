@@ -7,6 +7,8 @@
 #include "config_dgraph.h"
 #include "config_event.h"
 
+#include "draggableObjectManager.h"
+
 void update_edge_span(const Event* e, void* args) {
     FreeFormDeform *_ffd = (FreeFormDeform*)args;
     _ffd->set_edge_spans(5, 5, 5);
@@ -29,6 +31,14 @@ int main() {
 
     FreeFormDeform* ffd = new FreeFormDeform(np, window->get_render());
     ffd->setup_clicker(*window);
+
+    DraggableObjectManager* dom = DraggableObjectManager::get_global_ptr();
+    dom->setup_nodes(
+        window->get_render(),
+        window->get_camera_group().find("**/camera"),
+        window->get_mouse()
+     );
+    dom->setup_mouse("shift-mouse1");
 
     framework->define_key("e", "edge_span_test", update_edge_span, ffd);
     framework->main_loop();

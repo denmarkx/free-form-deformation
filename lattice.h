@@ -7,8 +7,10 @@
 #include "boundingSphere.h"
 #include "lineSegs.h"
 #include "textNode.h"
+#include "draggableObject.h"
+#include "draggableObjectManager.h"
 
-class Lattice : public NodePath {
+class Lattice : public NodePath, DraggableObject {
 public:
     inline Lattice(NodePath np);
     inline ~Lattice();
@@ -42,6 +44,7 @@ private:
     void push_point_relationship(int index, int adjacent_index);
 
     Loader *_loader = Loader::get_global_ptr();
+    DraggableObjectManager* _dom = DraggableObjectManager::get_global_ptr();
 
     pvector<NodePath> _control_points; // P(ijk)
     pvector<LVector3f> _lattice_vecs; // STU
