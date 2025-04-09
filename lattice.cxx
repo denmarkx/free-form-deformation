@@ -1,14 +1,5 @@
 #include "lattice.h"
 
-Lattice::Lattice(NodePath np) : NodePath("FFD_Lattice") {
-    _np = np;
-    rebuild();
-}
-
-Lattice::~Lattice() {
-    remove_node();
-}
-
 void Lattice::rebuild() {
     CPT(BoundingSphere) b_sphere = _np.get_bounds()->as_bounding_sphere();
     const double radius = b_sphere->get_radius();
@@ -218,10 +209,6 @@ void Lattice::create_edges() {
     attach_new_node(_edges.create());
 }
 
-NodePath& Lattice::get_control_point(int index) {
-    return _control_points[index];
-}
-
 /*
 Updates the adjacent edges to match the given control point.
 */
@@ -246,36 +233,11 @@ void Lattice::reset_edges() {
     num_segments = -1;
 }
 
-void Lattice::set_control_point_pos(LPoint3f pos, int index) {
-    NodePath c_point = _control_points[index];
-    c_point.set_pos(pos);
-}
-
 void Lattice::reset_control_points() {
     for (NodePath& c_point : _control_points) {
         c_point.remove_node();
     }
     _control_points.clear();
-}
-
-int Lattice::get_num_control_points() {
-    return _control_points.size();
-}
-
-LPoint3f Lattice::get_x0() {
-    return this->_x0;
-}
-
-LPoint3f Lattice::get_x1() {
-    return this->_x1;
-}
-
-pvector<LVector3f> Lattice::get_lattice_vecs() {
-    return this->_lattice_vecs;
-}
-
-LPoint3f Lattice::get_control_point_pos(int i, const NodePath& other) {
-    return _control_points[i].get_pos(other);
 }
 
 void Lattice::create_point(LPoint3f point, const double radius, int i, int j, int k) {
@@ -329,8 +291,3 @@ bool Lattice::point_in_range(LPoint3f &point) {
     }
     return true;
 }
-
-pvector<int> Lattice::get_edge_spans() {
-    return _plane_spans;
-}
-

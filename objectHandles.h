@@ -23,14 +23,14 @@ public:
 
     void cleanup();
 
-    void set_length(double length);
-    double get_length();
+    inline void set_length(double length);
+    inline double get_length() const;
 
-    void set_thickness(double thickness);
-    double get_thickness();
+    inline void set_thickness(double thickness);
+    inline double get_thickness() const;
 
-    void set_active(bool active);
-    bool is_active();
+    inline void set_active(bool active);
+    inline bool is_active() const;
 
     void add_node_path(NodePath &np);
     void clear_node_paths();
@@ -99,4 +99,7 @@ private:
 
     pmap<NodePath, pvector<NodePath>> _nps;
 };
+
+#include "objectHandles.I"
+
 #endif

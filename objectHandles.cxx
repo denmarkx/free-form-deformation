@@ -505,40 +505,6 @@ void ObjectHandles::enable_camera_movement() {
     _trackball->set_mat(_cam_mat);
 }
 
-
-void ObjectHandles::set_length(double length) {
-    _length = length;
-    rebuild();
-}
-
-double ObjectHandles::get_length() {
-    return _length;
-}
-
-void ObjectHandles::set_thickness(double thickness) {
-    _thickness = thickness;
-    rebuild();
-}
-
-double ObjectHandles::get_thickness() {
-    return _thickness;
-}
-
-void ObjectHandles::set_active(bool active) {
-    _active = active;
-
-    if (!active) {
-        hide();
-    }
-    else {
-        show();
-    }
-}
-
-bool ObjectHandles::is_active() {
-    return _active;
-}
-
 /*
 Adds NodePath to be tracked with object handles.
 Will not add if given np is empty.

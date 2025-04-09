@@ -22,8 +22,6 @@ public:
     FreeFormDeform(NodePath np, NodePath render);
     ~FreeFormDeform();
 
-    void destroy();
-
     void set_edge_spans(int size_x, int size_y, int size_z);
     void update_vertices();
 
