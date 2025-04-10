@@ -48,6 +48,19 @@ void DraggableObject::watch_node_path(NodePath& parent, int traverse_num) {
 }
 
 /*
+Returns boolean indicating if the given np is managed by this draggable.
+This will only ever return true if DraggableObject was initialized via
+DraggableObject(parent, traverse_num) or if watch_node_path was called.
+*/
+bool DraggableObject::has_node(NodePath& np) {
+    for (NodePath& other : _nodes) {
+        if (np == other) {
+            return true;
+        }
+    }
+}
+
+/*
 Only called when DraggableObject is given a parent and a traverse num.
 Keeps an internal list of  the children to make matching easier for the DOM.
 */

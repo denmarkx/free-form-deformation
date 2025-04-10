@@ -17,6 +17,7 @@ class DraggableObjectManager {
 public:
     DraggableObjectManager(NodePath& parent, NodePath& camera_np, NodePath& mouse_np);
     DraggableObjectManager();
+    ~DraggableObjectManager();
 
     void setup_nodes(NodePath& parent, NodePath& camera_np, NodePath& mouse_np);
     void setup_mouse(std::string click_button);

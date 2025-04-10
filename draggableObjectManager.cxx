@@ -16,7 +16,7 @@ DraggableObjectManager::DraggableObjectManager(NodePath &parent, NodePath &camer
 /*
 
 */
-DraggableObjectManager::DraggableObjectManager() {
+DraggableObjectManager::~DraggableObjectManager() {
     // Stop our Drag Task:
     if (task_mgr->find_task("DOM_DragTask") != nullptr) {
         task_mgr->remove(_clicker_task);
@@ -136,7 +136,17 @@ void DraggableObjectManager::click() {
     
     // If we made is this far, that means that we didn't have a tag match.
     // Let's compare directly to our managed objects.
-    // TODO
+    for (DraggableObject* draggable : _objects) {
+        if (draggable->has_node(into_np)) {
+            draggable->select(into_np);
+            object_handles->add_node_path(into_np);
+            return;
+        }
+    }
+
+    // If we're here, that means there was no draggable with this node
+    // nor was there one with the tag. Stop the object handles.
+    object_handles->set_active(false);
 }
 
 
