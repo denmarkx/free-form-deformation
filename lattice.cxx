@@ -1,4 +1,5 @@
 #include "lattice.h"
+#include "lineSegs_ext.h"
 
 void Lattice::rebuild() {
     CPT(BoundingSphere) b_sphere = _np.get_bounds()->as_bounding_sphere();
@@ -208,7 +209,10 @@ void Lattice::create_edges() {
     }
 
     // Attach to self.
-    attach_new_node(_edges.create());
+    _edgesNp = attach_new_node(_edges.create());
+
+    // Util for picking LineSegs:
+    LINESEGS_EXT::process_lines(_edges, _edgesNp);
 }
 
 /*
@@ -225,6 +229,9 @@ void Lattice::update_edges(int index) {
             }
         }
     }
+    
+    // Update the collision capsules:
+    LINESEGS_EXT::update_lines(_edges, _edgesNp);
 }
 
 void Lattice::reset_edges() {

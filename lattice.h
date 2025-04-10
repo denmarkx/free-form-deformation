@@ -53,6 +53,7 @@ private:
     LPoint3f _x0, _x1;
 
     NodePath _np;
+    NodePath _edgesNp;
 
     LineSegs _edges;
 
