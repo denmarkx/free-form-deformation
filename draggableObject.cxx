@@ -147,8 +147,9 @@ and calls deselect(NodePath) on all nodes that had the tag.
 */
 void DraggableObject::deselect() {
     // Where DraggableObject(NodePath)
-    for (NodePath& np : _selected) {
-        deselect(np);
+    size_t o_size = _selected.size();
+    for (size_t i = 0; i < o_size; i++) {
+        deselect(_selected[0]);
     }
 }
 

@@ -532,6 +532,33 @@ void ObjectHandles::add_node_path(NodePath &np) {
 }
 
 /*
+Removes singular, tracked NodePath.
+*/
+void ObjectHandles::remove_node_path(NodePath& np) {
+    // We don't manage you?
+    if (np.get_parent() != *_np_obj_node) {
+        return;
+    }
+    
+    // Iterate through _nps to find the real parent of np.
+    pmap<NodePath, pvector<NodePath>>::iterator it;
+
+    for (it = _nps.begin(); it != _nps.end(); it++) {
+        pvector<NodePath> &children = it->second;
+        for (size_t i = 0; i < children.size(); i++) {
+            if (children[i] == np) {
+                // Remove from vector:
+                children.erase(children.begin() + i);
+
+                // And reparent np back to original parent.
+                np.wrt_reparent_to(it->first);
+                break;
+            }
+        }
+    }
+}
+
+/*
 Removes all tracked NodePaths.
 */
 void ObjectHandles::clear_node_paths() {

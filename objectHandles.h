@@ -33,6 +33,7 @@ public:
     inline bool is_active() const;
 
     void add_node_path(NodePath &np);
+    void remove_node_path(NodePath& np);
     void clear_node_paths();
 
 private:

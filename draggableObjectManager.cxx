@@ -133,6 +133,9 @@ void DraggableObjectManager::click() {
         num_selected += selected.size();
 
         if (std::find(selected.begin(), selected.end(), into_np) != selected.end()) {
+            // Tell ObjectHandles about us:
+            object_handles->remove_node_path(into_np);
+
             // Deselect.
             draggable->deselect(into_np);
             deselected_flag = true;
@@ -142,9 +145,10 @@ void DraggableObjectManager::click() {
 
     // Check if there's anything selected still.
     // ..and that we actually deselected something.
-    if (num_selected == 0 && deselected_flag == true) {
-        // Stop handles.
-        object_handles->set_active(false);
+    if (deselected_flag == true) {
+        if (num_selected == 0) {
+            object_handles->set_active(false);
+        }
         return;
     }
 
@@ -174,20 +178,20 @@ void DraggableObjectManager::click() {
     // If we're here, that means there was no draggable with this node
     // nor was there one with the tag. Stop the object handles.
     object_handles->set_active(false);
+    deselect_all();
 }
 
 
 /*
 */
 void DraggableObjectManager::deselect_all() {
-    // Stop our handles:
-    object_handles->clear_node_paths();
-    object_handles->set_active(false);
-
     // Run deselect on all our managed nodes:
     for (DraggableObject *draggable : _objects) {
         draggable->deselect();
     }
+
+    // Stop our handles:
+    object_handles->set_active(false);
 }
 
 /*

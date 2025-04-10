@@ -37,6 +37,7 @@ inline void ObjectHandles::set_active(bool active) {
     // NodePath.hide/show:
     if (!active) {
         hide();
+        clear_node_paths();
     } else {
         show();
     }
