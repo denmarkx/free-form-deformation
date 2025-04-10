@@ -188,7 +188,7 @@ We don't do this from the ObjectHandler for simplicity.
 static AsyncTask::DoneStatus drag_task(GenericAsyncTask *task, void* args) {
     DraggableObjectManager* dom = (DraggableObjectManager*)args;
     for (DraggableObject *draggable : dom->_objects) {
-        const Event* e = new Event(draggable->get_event_name());
+        CPT(Event) e = new Event(draggable->get_event_name());
         dom->event_handler->dispatch_event(e);
     }
     return AsyncTask::DS_cont;
