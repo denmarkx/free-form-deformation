@@ -76,10 +76,18 @@ void DraggableObject::traverse_children(NodePathCollection& children, int count)
 }
 
 /*
+Returns vector of NodePaths representing the selected objects.
+*/
+pvector<NodePath> DraggableObject::get_selected() {
+    return _selected;
+}
+
+/*
 Object has been selected. Children may inherit for additional functionality.
 */
 void DraggableObject::select(NodePath& np) {
     np.set_color_scale(0, 1, 0, 1);
+    _selected.push_back(np);
 }
 
 /*
@@ -87,6 +95,17 @@ Object has been deselected. Children may inherit for additional functionality.
 */
 void DraggableObject::deselect(NodePath& np) {
     np.clear_color_scale();
+
+    // Get index of np in _selected:
+    pvector<NodePath>::iterator it = std::find(_selected.begin(), _selected.end(), np);
+    if (it == _selected.end()) {
+        return;
+    }
+
+    int index = std::distance(_selected.begin(), it);
+
+    // Remove from vector:
+    _selected.erase(_selected.begin() + index);
 }
 
 /*
@@ -107,6 +126,22 @@ void DraggableObject::deselect() {
     for (size_t i = 0; i < collection.get_num_paths(); i++) {
         deselect(collection.get_path(i));
     }
+}
+
+/*
+
+*/
+void DraggableObject::hook_drag_event(std::string event_name, EventHandler::EventCallbackFunction function, void* args) {
+    EventHandler *event_handler = EventHandler::get_global_event_handler();
+    event_handler->add_hook(event_name, function, args);
+    _event_name = event_name;
+}
+
+/*
+
+*/
+std::string DraggableObject::get_event_name() const {
+    return _event_name;
 }
 
 /*

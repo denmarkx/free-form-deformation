@@ -30,7 +30,6 @@ int main() {
     oh->set_thickness(5);
 
     FreeFormDeform* ffd = new FreeFormDeform(np, window->get_render());
-    ffd->setup_clicker(*window);
 
     DraggableObjectManager* dom = DraggableObjectManager::get_global_ptr();
     dom->setup_nodes(

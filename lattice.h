@@ -10,7 +10,7 @@
 #include "draggableObject.h"
 #include "draggableObjectManager.h"
 
-class Lattice : public NodePath, DraggableObject {
+class Lattice : public NodePath, public DraggableObject {
 public:
     inline Lattice(NodePath np);
     inline ~Lattice();

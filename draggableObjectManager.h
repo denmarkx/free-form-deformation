@@ -29,6 +29,8 @@ public:
 public:
     PT(Camera) _camera;
     PT(MouseWatcher) _mouse;
+    std::vector<DraggableObject*> _objects;
+    EventHandler* event_handler = EventHandler::get_global_event_handler();
 
 private:
     void setup_picking_objects();
@@ -43,13 +45,11 @@ private:
     PT(CollisionHandlerQueue) _handler_queue;
     PT(GenericAsyncTask) _clicker_task;
 
-    EventHandler* event_handler = EventHandler::get_global_event_handler();
     AsyncTaskManager* task_mgr = AsyncTaskManager::get_global_ptr();
 
     ObjectHandles* object_handles;
 
-    std::vector<DraggableObject> _objects;
-    std::map<std::string, DraggableObject> _tag_map;
+    std::map<std::string, DraggableObject*> _tag_map;
 
     static DraggableObjectManager* _global_ptr;
 };

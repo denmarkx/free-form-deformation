@@ -1,32 +1,25 @@
 #include "freeFormDeform.h"
 
+static void handle_drag(const Event* e, void* args);
+
 FreeFormDeform::FreeFormDeform(NodePath np, NodePath render) {
     _np = np;
     _render = render;
 
     _lattice = new Lattice(_np);
     _lattice->reparent_to(_render);
-
+    _lattice->hook_drag_event("FFD_DRAG_EVENT", handle_drag, this);
     process_node();
 }
 
+static void handle_drag(const Event* e, void* args) {
+    FreeFormDeform* ffd = (FreeFormDeform*)args;
+    ffd->update_vertices();
+}
+
 FreeFormDeform::~FreeFormDeform() {
-
-    if (_task_mgr->find_task("DragWatcherTask") != nullptr) {
-        _task_mgr->remove(_clicker_task);
-    }
-
-    // Ignore mouse1:
-    EventHandler* event_handler = EventHandler::get_global_event_handler();
-    event_handler->remove_hooks_with((void*)_c_args);
-
     // Delete the Lattice:
     delete _lattice;
-
-    // Collision / Clicking Data:
-    _picker_node.remove_node();
-    delete _c_args;
-    delete _traverser;
 }
 
 double FreeFormDeform::factorial(double n) {
@@ -136,6 +129,12 @@ LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
 }
 
 void FreeFormDeform::update_vertices() {
+    std::vector<int> control_point_indices;
+    
+    for (NodePath& np : _lattice->get_selected()) {
+        control_point_indices.push_back(atoi(np.get_net_tag("control_point").c_str()));
+    }
+
     PT(GeomVertexData) vertex_data;
     PT(Geom) geom;
 
@@ -143,8 +142,8 @@ void FreeFormDeform::update_vertices() {
         for (size_t i = 0; i < geom_node->get_num_geoms(); i++) {
             geom = geom_node->modify_geom(i);
             vertex_data = geom->modify_vertex_data();
-            for (size_t j = 0; j < _selected_points.size(); j++) {
-                transform_vertex(vertex_data, geom_node, _selected_points[j]);
+            for (size_t j = 0; j < control_point_indices.size(); j++) {
+                transform_vertex(vertex_data, geom_node, control_point_indices[j]);
             }
             geom->set_vertex_data(vertex_data);
             geom_node->set_geom(i, geom);
@@ -152,7 +151,7 @@ void FreeFormDeform::update_vertices() {
     }
 
     // Also updates the lattice:
-    for (size_t i : _selected_points) {
+    for (size_t i : control_point_indices) {
         _lattice->update_edges(i);
     }
 }
@@ -242,122 +241,3 @@ LPoint3f FreeFormDeform::point_at_axis(double axis_value, LPoint3f point, LVecto
     return point + vector * ((axis_value - point[axis]) / vector[axis]);
 }
 
-/*
-Updates the vertices whenever there is a point selected.
-Uses the pre-existing control point position.
-*/
-AsyncTask::DoneStatus FreeFormDeform::drag_task(GenericAsyncTask* task, void* args) {
-    ClickerArgs* c_args = (ClickerArgs*)args;
-   
-    PT(MouseWatcher) mouse = c_args->mouse;
-    FreeFormDeform* ffd = c_args->ffd;
-
-    // Ignore if mouse is out of bounds:
-    if (!mouse->has_mouse()) {
-        return AsyncTask::DS_again;
-    }
-    
-    // Ignore if there's nothing selected.
-    if (ffd->_selected_points.size() == 0) {
-        ffd->_object_handles->set_active(false);
-        ffd->_object_handles->clear_node_paths();
-        return AsyncTask::DS_again;
-    }
-
-    ffd->_object_handles->set_active(true);
-    ffd->update_vertices();
-    return AsyncTask::DS_cont;
-}
-
-void FreeFormDeform::handle_click(const Event* event, void* args) {
-    ClickerArgs* c_args = (ClickerArgs*)args;
-
-    PT(MouseWatcher) mouse = c_args->mouse;
-    FreeFormDeform* ffd = c_args->ffd;
-    WindowFramework* window = c_args->window;
-
-    if (!mouse->has_mouse()) {
-        return;
-    }
-
-    PT(Camera) camera = window->get_camera(0);
-    ffd->_collision_ray->set_from_lens(camera, mouse->get_mouse().get_x(), mouse->get_mouse().get_y());
-
-    NodePath render = window->get_render();
-    ffd->_traverser->traverse(render);
-    ffd->_handler_queue->sort_entries();
-
-    NodePath control_point;
-    if (ffd->_handler_queue->get_num_entries() == 0) {
-        for (int i : ffd->_selected_points) {
-            control_point = ffd->_lattice->get_control_point(i);
-            control_point.set_color(1, 0, 1, 1);
-        }
-        ffd->_selected_points.clear();
-        return;
-    }
-
-    NodePath into_node = ffd->_handler_queue->get_entry(0)->get_into_node_path();
-    NodePath* into_node_ptr = &into_node;
-
-    if (!into_node.has_net_tag("control_point")) {
-        return;
-    }
-
-    int point_index = atoi(into_node.get_net_tag("control_point").c_str());
-
-    pvector<int>::iterator it;
-    it = std::find(ffd->_selected_points.begin(), ffd->_selected_points.end(), point_index);
-
-    size_t i;
-    if (it != ffd->_selected_points.end()) {
-        i = std::distance(ffd->_selected_points.begin(), it);
-
-        // Deselect:
-        ffd->_selected_points.erase(ffd->_selected_points.begin() + i);
-        into_node.clear_color();
-        return;
-    }
-
-    // Select:
-    ffd->_selected_points.push_back(point_index);
-
-    control_point = ffd->_lattice->get_control_point(point_index);
-
-    control_point.set_color(0, 1, 0, 1);
-
-    // Need to actually get the proper NodePath for this:
-    ffd->_object_handles->add_node_path(control_point);
-}
-
-void FreeFormDeform::setup_clicker(WindowFramework &window) {
-    return;
-   _traverser = new CollisionTraverser("FFD_Traverser");
-
-    PT(CollisionNode) collision_node = new CollisionNode("mouse_ray");
-    collision_node->set_from_collide_mask(GeomNode::get_default_collide_mask());
-
-    _picker_node = window.get_camera_group().attach_new_node(collision_node);
-
-    _collision_ray = new CollisionRay();
-    collision_node->add_solid(_collision_ray);
-
-    _handler_queue = new CollisionHandlerQueue();
-    _traverser->add_collider(_picker_node, _handler_queue);
-
-    NodePath mouse = window.get_mouse();
-    PT(MouseWatcher) mouse_ptr = DCAST(MouseWatcher, mouse.node());
-
-    // Click mouse1 Event:
-    _c_args = new ClickerArgs{ mouse_ptr, &window, this };
-
-    EventHandler *event_handler = EventHandler::get_global_event_handler();
-    event_handler->add_hook("shift-mouse1", handle_click, _c_args);
-
-    // Dragging Task:
-    _clicker_task = new GenericAsyncTask("DragWatcherTask", &drag_task, _c_args);
-    _task_mgr->add(_clicker_task);
-
-    // Object Handles:
-    _object_handles = new ObjectHandles(NodePath(), window.get_mouse(), window.get_camera_group(), window.get_camera(0));
-}

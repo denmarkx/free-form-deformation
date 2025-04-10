@@ -30,12 +30,12 @@ void DraggableObjectManager::setup_nodes(NodePath &parent, NodePath &camera_np, 
 Registers object with the manager.
 */
 void DraggableObjectManager::register_object(DraggableObject& draggable) {
-    _objects.push_back(draggable);
+    _objects.push_back(&draggable);
 
     // Check if this has a tag:
     if (draggable.is_watching_tag()) {
         // Keep track:
-        _tag_map[draggable.get_tag()] = draggable;
+        _tag_map[draggable.get_tag()] = &draggable;
     }
 }
 
@@ -98,15 +98,15 @@ void DraggableObjectManager::click() {
 
     // Get our top entry:
     PT(CollisionEntry) entry = _handler_queue->get_entry(0);
-    NodePath into_np = entry->get_into_node_path();
+    NodePath into_np = entry->get_into_node_path().get_parent();
 
-    DraggableObject draggable;
+    DraggableObject *draggable;
 
     // Check to see if we have any of special tags:
-    for (std::map<std::string, DraggableObject>::iterator it = _tag_map.begin(); it != _tag_map.end(); it++) {
+    for (std::map<std::string, DraggableObject*>::iterator it = _tag_map.begin(); it != _tag_map.end(); it++) {
         if (into_np.has_net_tag(it->first)) {
             draggable = it->second;
-            draggable.select(into_np);
+            draggable->select(into_np);
 
             object_handles->add_node_path(into_np);
             return;
@@ -127,8 +127,8 @@ void DraggableObjectManager::deselect_all() {
     object_handles->set_active(false);
 
     // Run deselect on all our managed nodes:
-    for (DraggableObject& draggable : _objects) {
-        draggable.deselect();
+    for (DraggableObject *draggable : _objects) {
+        draggable->deselect();
     }
 }
 
@@ -150,9 +150,16 @@ static void handle_mouse_click(const Event* e, void* args) {
 /*
 Task that executes whenever we are dragging the mouse whilst the event
 assigned to setup_mouse(x) is called.
+
+The point of this is to shoot off an event to the DraggableObject if they're listening.
+We don't do this from the ObjectHandler for simplicity.
 */
 static AsyncTask::DoneStatus drag_task(GenericAsyncTask *task, void* args) {
     DraggableObjectManager* dom = (DraggableObjectManager*)args;
+    for (DraggableObject *draggable : dom->_objects) {
+        const Event* e = new Event(draggable->get_event_name());
+        dom->event_handler->dispatch_event(e);
+    }
     return AsyncTask::DS_cont;
 }
 
