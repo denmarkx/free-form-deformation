@@ -138,6 +138,9 @@ void FreeFormDeform::update_vertices() {
     PT(GeomVertexData) vertex_data;
     PT(Geom) geom;
 
+    // TODO: outside of scope of draggable-object-mgr branch,
+    // but we apparently don't need to run set_geom all the time.
+    // there's some optimizations to be made here and in transform_vertex.
     for (GeomNode* geom_node : _geom_nodes) {
         for (size_t i = 0; i < geom_node->get_num_geoms(); i++) {
             geom = geom_node->modify_geom(i);

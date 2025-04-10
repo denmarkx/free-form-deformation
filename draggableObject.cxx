@@ -54,10 +54,19 @@ DraggableObject(parent, traverse_num) or if watch_node_path was called.
 */
 bool DraggableObject::has_node(NodePath& np) {
     for (NodePath& other : _nodes) {
-        if (np == other) {
-            return true;
+        // Other means of np == other:
+        if (np.get_pos() != other.get_pos()) {
+            continue;
         }
+        if (np.get_name() != other.get_name()) {
+            continue;
+        }
+        if (np.get_parent().get_name() != other.get_parent().get_name()) {
+            continue;
+        }
+        return true;
     }
+    return false;
 }
 
 /*
