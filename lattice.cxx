@@ -210,6 +210,7 @@ void Lattice::create_edges() {
 
     // Attach to self.
     _edgesNp = attach_new_node(_edges.create());
+    _edgesNp.set_tag("LINE_SEG_TAG", "");
 
     // Util for picking LineSegs:
     LINESEGS_EXT::process_lines(_edges, _edgesNp);
