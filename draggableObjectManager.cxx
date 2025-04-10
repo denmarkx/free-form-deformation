@@ -121,6 +121,33 @@ void DraggableObjectManager::click() {
     PT(CollisionEntry) entry = _handler_queue->get_entry(0);
     NodePath into_np = entry->get_into_node_path().get_parent();
 
+    // Check if we're already selected:
+    pvector<NodePath> selected;
+    int num_selected = 0;
+    bool deselected_flag = false;
+
+    for (DraggableObject* draggable : _objects) {
+        selected = draggable->get_selected();
+
+        // While we're doing this, we're keeping track of selected objects.
+        num_selected += selected.size();
+
+        if (std::find(selected.begin(), selected.end(), into_np) != selected.end()) {
+            // Deselect.
+            draggable->deselect(into_np);
+            deselected_flag = true;
+            num_selected -= 1;
+        }
+    }
+
+    // Check if there's anything selected still.
+    // ..and that we actually deselected something.
+    if (num_selected == 0 && deselected_flag == true) {
+        // Stop handles.
+        object_handles->set_active(false);
+        return;
+    }
+
     DraggableObject *draggable;
 
     // Check to see if we have any of special tags:

@@ -116,7 +116,7 @@ pvector<NodePath> DraggableObject::get_selected() {
 Object has been selected. Children may inherit for additional functionality.
 */
 void DraggableObject::select(NodePath& np) {
-    np.set_color_scale(0, 1, 0, 1);
+    np.set_color(0, 1, 0, 1);
     _selected.push_back(np);
 }
 
@@ -124,7 +124,7 @@ void DraggableObject::select(NodePath& np) {
 Object has been deselected. Children may inherit for additional functionality.
 */
 void DraggableObject::deselect(NodePath& np) {
-    np.clear_color_scale();
+    np.clear_color();
 
     // Get index of np in _selected:
     pvector<NodePath>::iterator it = std::find(_selected.begin(), _selected.end(), np);
@@ -147,14 +147,8 @@ and calls deselect(NodePath) on all nodes that had the tag.
 */
 void DraggableObject::deselect() {
     // Where DraggableObject(NodePath)
-    for (NodePath& np : _nodes) {
+    for (NodePath& np : _selected) {
         deselect(np);
-    }
-
-    // Where DraggableObject(string)
-    NodePathCollection collection = _parent.find_all_matches("**/=" + _tag);
-    for (size_t i = 0; i < collection.get_num_paths(); i++) {
-        deselect(collection.get_path(i));
     }
 }
 
