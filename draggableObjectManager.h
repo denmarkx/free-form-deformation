@@ -31,6 +31,8 @@ public:
     PT(Camera) _camera;
     PT(MouseWatcher) _mouse;
     std::vector<DraggableObject*> _objects;
+    LPoint2f _mouse_pos;
+
     EventHandler* event_handler = EventHandler::get_global_event_handler();
 
 private:

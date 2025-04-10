@@ -187,6 +187,21 @@ We don't do this from the ObjectHandler for simplicity.
 */
 static AsyncTask::DoneStatus drag_task(GenericAsyncTask *task, void* args) {
     DraggableObjectManager* dom = (DraggableObjectManager*)args;
+
+    // Do not do anything if there's no mouse:
+    if (!dom->_mouse->has_mouse()) {
+        return AsyncTask::DS_again;
+    }
+
+    // Don't do anything if there's no movement:
+    if (dom->_mouse_pos == dom->_mouse->get_mouse()) {
+        return AsyncTask::DS_again;
+    }
+
+    // Set _mouse_pos:
+    dom->_mouse_pos = dom->_mouse->get_mouse();
+
+    // Dispatch the event to everyone listening:
     for (DraggableObject *draggable : dom->_objects) {
         CPT(Event) e = new Event(draggable->get_event_name());
         dom->event_handler->dispatch_event(e);
