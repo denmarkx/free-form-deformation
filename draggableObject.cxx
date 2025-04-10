@@ -33,6 +33,14 @@ DraggableObject::DraggableObject() {}
 /*
 
 */
+DraggableObject::~DraggableObject() {
+    EventHandler* event_handler = EventHandler::get_global_event_handler();
+    event_handler->remove_hooks(get_event_name());
+}
+
+/*
+
+*/
 void DraggableObject::watch_node_path(NodePath& parent, int traverse_num) {
     _parent = parent;
     _traverse_num = traverse_num;

@@ -39,6 +39,7 @@ private:
     NodePath _parent;
     NodePath _camera_np;
     NodePath _mouse_np;
+    NodePath _picker_node;
 
     CollisionTraverser* _traverser;
     PT(CollisionRay) _collision_ray;

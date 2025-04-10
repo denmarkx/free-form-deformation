@@ -13,6 +13,27 @@ DraggableObjectManager::DraggableObjectManager(NodePath &parent, NodePath &camer
     setup_nodes(parent, camera_np, mouse_np);
 }
 
+/*
+
+*/
+DraggableObjectManager::DraggableObjectManager() {
+    // Stop our Drag Task:
+    if (task_mgr->find_task("DOM_DragTask") != nullptr) {
+        task_mgr->remove(_clicker_task);
+    }
+
+    // Remove click event:
+    EventHandler* event_handler = EventHandler::get_global_event_handler();
+    event_handler->remove_hooks_with(this);
+
+    // Deselect all:
+    deselect_all();
+
+    // Remove everyone:
+    _picker_node.remove_node();
+    delete _traverser;
+    delete object_handles;
+}
 
 /*
 Sets the parent, camera, and mouse and its underlying nodes.
@@ -53,7 +74,7 @@ void DraggableObjectManager::setup_picking_objects() {
     collision_node->set_from_collide_mask(GeomNode::get_default_collide_mask());
 
     // Attach to our camera:
-    NodePath picker_node = _camera_np.attach_new_node(collision_node);
+    _picker_node = _camera_np.attach_new_node(collision_node);
 
     // Setup our ray:
     _collision_ray = new CollisionRay();
@@ -61,7 +82,7 @@ void DraggableObjectManager::setup_picking_objects() {
 
     // Then a handler queue:
     _handler_queue = new CollisionHandlerQueue();
-    _traverser->add_collider(picker_node, _handler_queue);
+    _traverser->add_collider(_picker_node, _handler_queue);
 
     // also our object handles..
     object_handles = new ObjectHandles(
