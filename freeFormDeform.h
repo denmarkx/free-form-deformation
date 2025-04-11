@@ -23,7 +23,6 @@ public:
 
 private:
     void transform_vertex(GeomVertexData* data, GeomNode* geom, int index);
-    void transform_all_influenced(GeomVertexData* data, GeomNode* geom_node);
 
     double factorial(double n);
     int binomial_coeff(int n, int k);
