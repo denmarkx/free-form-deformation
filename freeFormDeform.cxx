@@ -1,4 +1,5 @@
 #include "freeFormDeform.h"
+#include <unordered_set>
 
 static void handle_drag(const Event* e, void* args);
 
@@ -96,6 +97,42 @@ void FreeFormDeform::reset_vertices(GeomVertexData* data, GeomNode* geom_node, s
     }
 }
 
+/*
+*/
+void FreeFormDeform::transform_all_influenced(GeomVertexData* data, GeomNode* geom_node) {
+    GeomVertexWriter rewriter(data, "vertex");
+    LPoint3f default_vertex, default_object_space; // (stu)
+    LVector3f x_ffd;
+
+    pmap<int, pvector<int>> influence_map = _influenced_vertices[geom_node]; // key is ctrl point.
+    pvector<int> vertices;
+    pvector<LPoint3f> default_vertex_pos;
+
+    std::unordered_set<int> _vertices2;
+
+    int vertex = 0;
+    for (int i = 0; i < influence_map.size(); i++) {
+        vertices = influence_map[i];
+        for (int j = 0; j < vertices.size(); j++) {
+            vertex = vertices[j];
+            _vertices2.insert(vertex);
+        }
+    }
+
+    for (const int& vertex : _vertices2) {
+        rewriter.set_row(vertex);
+
+        default_vertex_pos = _default_vertex_ws_os[geom_node][vertex];
+        default_vertex = default_vertex_pos[0];
+        double s = default_vertex_pos[1][0];
+        double t = default_vertex_pos[1][1];
+        double u = default_vertex_pos[1][2];
+
+        x_ffd = deform_vertex(s, t, u);
+        rewriter.set_data3f(x_ffd);
+    }
+}
+
 void FreeFormDeform::transform_vertex(GeomVertexData* data, GeomNode* geom_node, int index) {
     GeomVertexWriter rewriter(data, "vertex");
 
@@ -155,6 +192,9 @@ void FreeFormDeform::update_vertices() {
     std::vector<int> control_point_indices;
     
     for (NodePath& np : _lattice->get_selected()) {
+        if (np.get_name() == "lattice_edges") {
+            break;
+        }
         control_point_indices.push_back(atoi(np.get_net_tag("control_point").c_str()));
     }
 
@@ -168,8 +208,17 @@ void FreeFormDeform::update_vertices() {
         for (size_t i = 0; i < geom_node->get_num_geoms(); i++) {
             geom = geom_node->modify_geom(i);
             vertex_data = geom->modify_vertex_data();
-            for (size_t j = 0; j < control_point_indices.size(); j++) {
-                transform_vertex(vertex_data, geom_node, control_point_indices[j]);
+
+            // We may be reset then come back into scope of the lattice.
+            // At this point, we deform all vertices within the lattice.
+            if (control_point_indices.size() == 0) {
+                transform_all_influenced(vertex_data, geom_node);
+            }
+            else {
+                // Otherwise, deform only what is influenced by the selected control points.
+                for (size_t j = 0; j < control_point_indices.size(); j++) {
+                    transform_vertex(vertex_data, geom_node, control_point_indices[j]);
+                }
             }
             // We're going to reset the vertices that are no longer apart of the lattice.
             reset_vertices(vertex_data, geom_node, control_point_indices);
