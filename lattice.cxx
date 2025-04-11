@@ -270,18 +270,16 @@ void Lattice::set_edge_spans(int size_x, int size_y, int size_z) {
     rebuild();
 }
 
-// XXX: TEMP FOR TESTING
-static int t = 0;
 void Lattice::calculate_lattice_vec() {
     _lattice_vecs.clear();
-    if (t == 0) {
+    if (!initial_bounds_capture) {
         _np.calc_tight_bounds(_x0, _x1);
+        initial_bounds_capture = true;
     }
     else {
         _edgesNp.calc_tight_bounds(_x0, _x1, _np.get_top());
         _edgesNp.show_tight_bounds();
     }
-    t++;
 
     LPoint3f delta = _edgesNp.get_pos(_np.get_top()) - _edge_pos;
     

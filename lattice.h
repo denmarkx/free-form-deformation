@@ -68,6 +68,8 @@ private:
     pmap<int, pvector<int>> point_map_future;
 
     int num_segments = -1;
+    
+    bool initial_bounds_capture = false;
 };
 
 #include "lattice.I"
