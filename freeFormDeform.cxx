@@ -97,6 +97,42 @@ void FreeFormDeform::reset_vertices(GeomVertexData* data, GeomNode* geom_node, s
     }
 }
 
+/*
+*/
+void FreeFormDeform::transform_all_influenced(GeomVertexData* data, GeomNode* geom_node) {
+    GeomVertexWriter rewriter(data, "vertex");
+    LPoint3f default_vertex, default_object_space; // (stu)
+    LVector3f x_ffd;
+
+    pmap<int, pvector<int>> influence_map = _influenced_vertices[geom_node]; // key is ctrl point.
+    pvector<int> vertices;
+    pvector<LPoint3f> default_vertex_pos;
+
+    std::unordered_set<int> _vertices2;
+
+    int vertex = 0;
+    for (int i = 0; i < influence_map.size(); i++) {
+        vertices = influence_map[i];
+        for (int j = 0; j < vertices.size(); j++) {
+            vertex = vertices[j];
+            _vertices2.insert(vertex);
+        }
+    }
+
+    for (const int& vertex : _vertices2) {
+        rewriter.set_row(vertex);
+
+        default_vertex_pos = _default_vertex_ws_os[geom_node][vertex];
+        default_vertex = default_vertex_pos[0];
+        double s = default_vertex_pos[1][0];
+        double t = default_vertex_pos[1][1];
+        double u = default_vertex_pos[1][2];
+
+        x_ffd = deform_vertex(s, t, u);
+        rewriter.set_data3f(x_ffd);
+    }
+}
+
 void FreeFormDeform::transform_vertex(GeomVertexData* data, GeomNode* geom_node, int index) {
     GeomVertexWriter rewriter(data, "vertex");
 
@@ -180,8 +216,12 @@ void FreeFormDeform::update_vertices() {
             vertex_data = geom->modify_vertex_data();
 
             // We may be reset then come back into scope of the lattice.
-            // At this point, we deform all vertices within the lattice. (see before this loop)
-            if (control_point_indices.size() > 0) {
+            // At this point, we deform all vertices within the lattice.
+            if (control_point_indices.size() == 0) {
+                // TODO: remove
+                // transform_all_influenced(vertex_data, geom_node);
+            }
+            else {
                 // Otherwise, deform only what is influenced by the selected control points.
                 for (size_t j = 0; j < control_point_indices.size(); j++) {
                     transform_vertex(vertex_data, geom_node, control_point_indices[j]);
