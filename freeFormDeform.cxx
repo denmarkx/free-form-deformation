@@ -198,6 +198,12 @@ void FreeFormDeform::update_vertices() {
         control_point_indices.push_back(atoi(np.get_net_tag("control_point").c_str()));
     }
 
+    // Moving entire lattice:
+    if (control_point_indices.size() == 0) {
+        _np.set_pos(_lattice->_edge_pos);
+        return;
+    }
+
     PT(GeomVertexData) vertex_data;
     PT(Geom) geom;
 
@@ -212,7 +218,8 @@ void FreeFormDeform::update_vertices() {
             // We may be reset then come back into scope of the lattice.
             // At this point, we deform all vertices within the lattice.
             if (control_point_indices.size() == 0) {
-                transform_all_influenced(vertex_data, geom_node);
+                // TODO: remove
+                // transform_all_influenced(vertex_data, geom_node);
             }
             else {
                 // Otherwise, deform only what is influenced by the selected control points.

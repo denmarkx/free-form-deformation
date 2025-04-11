@@ -33,6 +33,8 @@ public:
     inline LPoint3f get_x0() const;
     inline LPoint3f get_x1() const;
 
+    LPoint3f _edge_pos;
+
 
 private:
     void create_point(LPoint3f point, const double radius, int i, int j, int k);
@@ -50,7 +52,7 @@ private:
     pvector<LVector3f> _lattice_vecs; // STU
     pvector<int> _plane_spans = { 2, 3, 2 }; // lnm
 
-    LPoint3f _x0, _x1, _edge_pos;
+    LPoint3f _x0, _x1;
 
     NodePath _np;
     NodePath _edgesNp;

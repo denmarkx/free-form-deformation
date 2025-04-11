@@ -228,7 +228,7 @@ void Lattice::update_edges(int index) {
     for (int i = 0; i < adjacent_points.size(); i++) {
         for (int j = 0; j < point_to_edge_vertex[adjacent_points[i]].size(); j++) {
             if (adjacent_points[i] == index) {
-                _edges.set_vertex(point_to_edge_vertex[index][j], get_control_point_pos(index, *this));
+                _edges.set_vertex(point_to_edge_vertex[index][j], get_control_point_pos(index, _edgesNp));
             }
         }
     }
