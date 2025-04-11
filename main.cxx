@@ -8,6 +8,7 @@
 #include "config_event.h"
 
 #include "draggableObjectManager.h"
+#include "draggableObject.h"
 
 void update_edge_span(const Event* e, void* args) {
     FreeFormDeform *_ffd = (FreeFormDeform*)args;
@@ -38,6 +39,9 @@ int main() {
         window->get_mouse()
      );
     dom->setup_mouse("shift-mouse1");
+
+    DraggableObject* draggable = new DraggableObject(np, 1);
+    dom->register_object(*draggable);
 
     framework->define_key("e", "edge_span_test", update_edge_span, ffd);
     framework->main_loop();
