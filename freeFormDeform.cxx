@@ -265,8 +265,14 @@ void FreeFormDeform::process_node() {
                 if (!captured_default_vertices) {
                     _default_vertex_ws_os[geom_node].push_back(vertex_object_space);
                 }
+                if (i == 0 && row == 0) {
+                    std::cout << "original: " << vertex << "\n";
+                    std::cout << _render.get_relative_point(_np.get_child(0), vertex) << "\n\n";
+                }
+
+                // TODO: _np.get_child(0) may be the wrong call. it depends on draggable's traverse call
                 // We do not care about vertices that aren't within our lattice.
-                if (!_lattice->point_in_range(vertex)) {
+                if (!_lattice->point_in_range(_render.get_relative_point(_np.get_child(0), vertex))) {
                     _non_influenced_vertex[geom_node].push_back(row);
                     row++;
                     continue;
