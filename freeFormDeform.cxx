@@ -198,18 +198,11 @@ LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
 void FreeFormDeform::update_vertices(bool force) {
     std::vector<int> control_point_indices;
     
-    bool moving_lattice = false;
     for (NodePath& np : _lattice->get_selected()) {
         if (np.get_name() == "lattice_edges") {
-            moving_lattice = true;
             break;
         }
         control_point_indices.push_back(atoi(np.get_net_tag("control_point").c_str()));
-    }
-
-    // Moving entire lattice:
-    if (moving_lattice) {
-        // TODO: set_pos of np to the lattice is the incorrect implementation.
     }
 
     PT(GeomVertexData) vertex_data;
