@@ -8,6 +8,8 @@ void Lattice::rebuild() {
     calculate_lattice_vec();
     create_control_points(radius);
     create_edges();
+
+    watch_node_path(*this, 2);
 }
 
 void Lattice::create_control_points(const double radius) {
@@ -268,9 +270,28 @@ void Lattice::set_edge_spans(int size_x, int size_y, int size_z) {
     rebuild();
 }
 
+// XXX: TEMP FOR TESTING
+static int t = 0;
 void Lattice::calculate_lattice_vec() {
     _lattice_vecs.clear();
-    _np.calc_tight_bounds(_x0, _x1);
+    if (t == 0) {
+        _np.calc_tight_bounds(_x0, _x1);
+    }
+    else {
+        _edgesNp.calc_tight_bounds(_x0, _x1, _np.get_parent());
+        _edgesNp.show_tight_bounds();
+    }
+    t++;
+
+    LPoint3f delta = _edgesNp.get_pos(_np.get_parent()) - _edge_pos;
+    
+    for (NodePath& cp : _control_points) {
+        LPoint3f pos = cp.get_pos();
+        cp.set_pos(pos + delta);
+    }
+
+    _edge_pos = _edgesNp.get_pos(_np.get_parent());
+
     double size_s = _x1[0] - _x0[0];
     double size_t = _x1[2] - _x0[2];
     double size_u = _x1[1] - _x0[1];

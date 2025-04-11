@@ -2,7 +2,7 @@
 Constructor for Lattice. NodePath is the singular, upper level node
 of the object wanting to be deformed.
 */
-inline Lattice::Lattice(NodePath np) : NodePath("FFD_Lattice"), DraggableObject(np.get_parent(), "LINE_SEG_TAG") {
+inline Lattice::Lattice(NodePath np) : NodePath("FFD_Lattice"), DraggableObject() {
     _np = np;
     rebuild();
 }

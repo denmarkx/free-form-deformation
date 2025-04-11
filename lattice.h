@@ -50,7 +50,7 @@ private:
     pvector<LVector3f> _lattice_vecs; // STU
     pvector<int> _plane_spans = { 2, 3, 2 }; // lnm
 
-    LPoint3f _x0, _x1;
+    LPoint3f _x0, _x1, _edge_pos;
 
     NodePath _np;
     NodePath _edgesNp;

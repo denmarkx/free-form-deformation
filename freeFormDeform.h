@@ -18,9 +18,10 @@ public:
 
     void set_edge_spans(int size_x, int size_y, int size_z);
     void update_vertices();
+    void process_node();
+    void reset_vertices(GeomVertexData* data, GeomNode* geom_node, std::vector<int>& indices);
 
 private:
-    void process_node();
     void transform_vertex(GeomVertexData* data, GeomNode* geom, int index);
 
     double factorial(double n);
@@ -42,6 +43,9 @@ private:
     // GeomNode -> {c_point : [vertex..]}
     typedef pmap<int, pvector<int>> __internal_vertices;
     pmap<PT(GeomNode), __internal_vertices> _influenced_vertices;
+
+    // GeomNode -> [not-influenced-vertex]
+    pmap<PT(GeomNode), pvector<int>> _non_influenced_vertex;
 
     // GeomNode -> [[default_vertex_world_space, default_vertex_object_space]]
     typedef pvector<pvector<LPoint3f>> __internal_default_vertices_pos;
