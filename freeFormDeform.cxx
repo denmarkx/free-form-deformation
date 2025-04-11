@@ -173,7 +173,7 @@ LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
             for (int k = 0; k <= spans[2]; k++) {
                 bernstein_coeff = bernstein(k, spans[2], u);
 
-                LPoint3f p_ijk = _lattice->get_control_point_pos(p_index, _render);
+                LPoint3f p_ijk = _lattice->get_control_point_pos(p_index, _lattice->_edgesNp);
                 vec_k += bernstein_coeff * p_ijk;
 
                 p_index++;

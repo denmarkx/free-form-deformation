@@ -34,6 +34,7 @@ public:
     inline LPoint3f get_x1() const;
 
     LPoint3f _edge_pos;
+    NodePath _edgesNp;
 
 
 private:
@@ -55,7 +56,6 @@ private:
     LPoint3f _x0, _x1;
 
     NodePath _np;
-    NodePath _edgesNp;
 
     LineSegs _edges;
 
