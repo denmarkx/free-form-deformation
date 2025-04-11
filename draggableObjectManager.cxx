@@ -175,6 +175,29 @@ void DraggableObjectManager::click() {
         }
     }
 
+    // CollisionEntry is a bit too specific in cases where we ask for a parent.
+    // This is the last resort if tagging and direct node comparison fails.
+    // We begin at into_np and traverse up and see if we run into a match.
+
+    // TODO: few options for optimizing this:
+    // a special bitmask for the node? 
+    // internally tagging it?
+
+    NodePath& ancestor = into_np;
+    for (DraggableObject* draggable : _objects) {
+        // We confirmed that we weren't into_np. Traverse up.
+        for (size_t i = 0; i < into_np.get_num_nodes()-1; i++) {
+            ancestor = into_np.get_ancestor(i);
+            // Check if we have you:
+            if (draggable->has_node(ancestor)) {
+                // Finally.
+                draggable->select(ancestor);
+                object_handles->add_node_path(ancestor);
+                return;
+            }
+        }
+    }
+
     // If we're here, that means there was no draggable with this node
     // nor was there one with the tag. Stop the object handles.
     object_handles->set_active(false);
