@@ -19,6 +19,12 @@ static void handle_drag(const Event* e, void* args) {
     ffd->update_vertices();
 }
 
+void FreeFormDeform::force_vertex_update(const Event* e, void* args) {
+    FreeFormDeform* ffd = (FreeFormDeform*)args;
+    ffd->process_node();
+    ffd->update_vertices(true);
+}
+
 FreeFormDeform::~FreeFormDeform() {
     // Delete the Lattice:
     delete _lattice;
@@ -188,20 +194,21 @@ LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
     return vec_i;
 }
 
-void FreeFormDeform::update_vertices() {
+void FreeFormDeform::update_vertices(bool force) {
     std::vector<int> control_point_indices;
     
+    bool moving_lattice = false;
     for (NodePath& np : _lattice->get_selected()) {
         if (np.get_name() == "lattice_edges") {
+            moving_lattice = true;
             break;
         }
         control_point_indices.push_back(atoi(np.get_net_tag("control_point").c_str()));
     }
 
     // Moving entire lattice:
-    if (control_point_indices.size() == 0) {
-        _np.set_pos(_lattice->_edge_pos);
-        return;
+    if (moving_lattice) {
+        // TODO: set_pos of np to the lattice is the incorrect implementation.
     }
 
     PT(GeomVertexData) vertex_data;
@@ -217,9 +224,8 @@ void FreeFormDeform::update_vertices() {
 
             // We may be reset then come back into scope of the lattice.
             // At this point, we deform all vertices within the lattice.
-            if (control_point_indices.size() == 0) {
-                // TODO: remove
-                // transform_all_influenced(vertex_data, geom_node);
+            if (control_point_indices.size() == 0 && force) {
+                 transform_all_influenced(vertex_data, geom_node);
             }
             else {
                 // Otherwise, deform only what is influenced by the selected control points.
@@ -305,14 +311,9 @@ void FreeFormDeform::process_node() {
                 if (!captured_default_vertices) {
                     _default_vertex_ws_os[geom_node].push_back(vertex_object_space);
                 }
-                if (i == 0 && row == 0) {
-                    std::cout << "original: " << vertex << "\n";
-                    std::cout << _render.get_relative_point(_np.get_child(0), vertex) << "\n\n";
-                }
 
-                // TODO: _np.get_child(0) may be the wrong call. it depends on draggable's traverse call
                 // We do not care about vertices that aren't within our lattice.
-                if (!_lattice->point_in_range(_render.get_relative_point(_np.get_child(0), vertex))) {
+                if (!_lattice->point_in_range(_render.get_relative_point(_np, vertex))) {
                     _non_influenced_vertex[geom_node].push_back(row);
                     row++;
                     continue;

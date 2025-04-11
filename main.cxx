@@ -40,8 +40,9 @@ int main() {
      );
     dom->setup_mouse("shift-mouse1");
 
-    DraggableObject* draggable = new DraggableObject(np, 1);
+    DraggableObject* draggable = new DraggableObject(np, 0);
     dom->register_object(*draggable);
+    draggable->hook_drag_event("d", ffd->force_vertex_update, ffd);
 
     framework->define_key("e", "edge_span_test", update_edge_span, ffd);
     framework->main_loop();

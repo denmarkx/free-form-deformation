@@ -278,19 +278,19 @@ void Lattice::calculate_lattice_vec() {
         _np.calc_tight_bounds(_x0, _x1);
     }
     else {
-        _edgesNp.calc_tight_bounds(_x0, _x1, _np.get_parent());
+        _edgesNp.calc_tight_bounds(_x0, _x1, _np.get_top());
         _edgesNp.show_tight_bounds();
     }
     t++;
 
-    LPoint3f delta = _edgesNp.get_pos(_np.get_parent()) - _edge_pos;
+    LPoint3f delta = _edgesNp.get_pos(_np.get_top()) - _edge_pos;
     
     for (NodePath& cp : _control_points) {
         LPoint3f pos = cp.get_pos();
         cp.set_pos(pos + delta);
     }
 
-    _edge_pos = _edgesNp.get_pos(_np.get_parent());
+    _edge_pos = _edgesNp.get_pos(_np.get_top());
 
     double size_s = _x1[0] - _x0[0];
     double size_t = _x1[2] - _x0[2];

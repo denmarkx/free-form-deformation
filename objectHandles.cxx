@@ -515,7 +515,7 @@ void ObjectHandles::add_node_path(NodePath &np) {
     }
 
     // Reparent:
-    reparent_to(np.get_parent().get_parent());
+    reparent_to(np.get_parent());
 
     // Keep track of who is selected:
     _nps[np.get_parent()].push_back(np);
