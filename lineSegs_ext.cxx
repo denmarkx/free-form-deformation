@@ -29,7 +29,6 @@ NodePath LINESEGS_EXT::process_lines(LineSegs& line, NodePath& lineNP) {
 
             NodePath coll_np = lineNP.attach_new_node(coll_node);
             coll_np.node()->set_into_collide_mask(CollideMask::bit(20));
-            coll_np.show();
         }
     }
     return NodePath();
