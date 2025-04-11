@@ -179,7 +179,8 @@ LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
             for (int k = 0; k <= spans[2]; k++) {
                 bernstein_coeff = bernstein(k, spans[2], u);
 
-                LPoint3f p_ijk = _lattice->get_control_point_pos(p_index, _lattice->_edgesNp);
+                LPoint3f p_ijk = _lattice->get_control_point_pos(p_index, _np.get_top());
+                
                 vec_k += bernstein_coeff * p_ijk;
 
                 p_index++;
@@ -225,7 +226,7 @@ void FreeFormDeform::update_vertices(bool force) {
             // We may be reset then come back into scope of the lattice.
             // At this point, we deform all vertices within the lattice.
             if (control_point_indices.size() == 0 && force) {
-                 transform_all_influenced(vertex_data, geom_node);
+                transform_all_influenced(vertex_data, geom_node);
             }
             else {
                 // Otherwise, deform only what is influenced by the selected control points.
