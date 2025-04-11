@@ -186,7 +186,6 @@ void FreeFormDeform::update_vertices() {
 
 /*
 */
-static int test = 0;
 void FreeFormDeform::process_node() {
     NodePathCollection collection = _np.find_all_matches("**/+GeomNode");
 
@@ -245,7 +244,9 @@ void FreeFormDeform::process_node() {
 
                 vertex_object_space.push_back(vertex);
                 vertex_object_space.push_back(LPoint3f(s, t, u));
-                if (!test) {
+
+                // We only want the default vertices once.
+                if (!captured_default_vertices) {
                     _default_vertex_ws_os[geom_node].push_back(vertex_object_space);
                 }
                 // We do not care about vertices that aren't within our lattice.
@@ -267,7 +268,7 @@ void FreeFormDeform::process_node() {
         }
         _geom_nodes.push_back(geom_node);
     }
-    test++;
+    captured_default_vertices = true;
 }
 
 void FreeFormDeform::set_edge_spans(int size_x, int size_y, int size_z) {

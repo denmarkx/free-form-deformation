@@ -32,6 +32,8 @@ private:
     int get_point_index(int i, int j, int k);
     std::vector<int> get_ijk(int index);
 
+    bool captured_default_vertices = false;
+
     NodePath _np;
     NodePath _render;
     Lattice* _lattice;
