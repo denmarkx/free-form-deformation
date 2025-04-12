@@ -21,7 +21,7 @@ public:
 
     void update_edges(int index);
     void set_edge_spans(int size_x, int size_y, int size_z);
-    inline pvector<int> get_edge_spans() const;
+    inline std::vector<int>& get_edge_spans();
 
     void set_control_point_pos(LPoint3f pos, int index);
     inline NodePath& get_control_point(int index);
@@ -51,7 +51,7 @@ private:
 
     pvector<NodePath> _control_points; // P(ijk)
     pvector<LVector3f> _lattice_vecs; // STU
-    pvector<int> _plane_spans = { 2, 3, 2 }; // lnm
+    std::vector<int> _plane_spans = { 2, 3, 2 }; // lnm
 
     LPoint3f _x0, _x1;
 

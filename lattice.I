@@ -70,6 +70,6 @@ inline NodePath& Lattice::get_control_point(int index) {
 /*
 Returns vector of size 3 representing l, m, n plane divisions.
 */
-inline pvector<int> Lattice::get_edge_spans() const {
+inline std::vector<int>& Lattice::get_edge_spans() {
     return _plane_spans;
 }

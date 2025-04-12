@@ -1,3 +1,6 @@
+#ifndef FREE_FORM_DEFORM_H
+#define FREE_FORM_DEFORM_H
+
 #include "nodePath.h"
 #include "geomNode.h"
 #include "lpoint3.h"
@@ -14,11 +17,12 @@
 class FreeFormDeform {
 public:
     FreeFormDeform(NodePath np, NodePath render);
-    ~FreeFormDeform();
+    inline ~FreeFormDeform();
 
-    void set_edge_spans(int size_x, int size_y, int size_z);
-    void update_vertices(bool force = false);
+    inline void set_edge_spans(int size_x, int size_y, int size_z);
+
     void process_node();
+    void update_vertices(bool force = false);
     void reset_vertices(GeomVertexData* data, GeomNode* geom_node, std::vector<int>& indices);
 
     static void handle_drag(const Event* e, void* args);
@@ -27,10 +31,10 @@ private:
     void transform_vertex(GeomVertexData* data, GeomNode* geom, int index);
     void transform_all_influenced(GeomVertexData* data, GeomNode* geom_node);
 
+    inline int binomial_coeff(int n, int k);
+    inline double bernstein(double v, double n, double x);
+
     double factorial(double n);
-    int binomial_coeff(int n, int k);
-    double bernstein(double v, double n, double x);
-    LPoint3f point_at_axis(double axis_value, LPoint3f point, LVector3f vector, int axis);
     bool is_influenced(int index, double s, double t, double u);
     int get_point_index(int i, int j, int k);
     std::vector<int> get_ijk(int index);
@@ -59,3 +63,7 @@ private:
     ObjectHandles* _object_handles;
     pvector<int> _selected_points;
 };
+
+#include "freeFormDeform.I"
+
+#endif

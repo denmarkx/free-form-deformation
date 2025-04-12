@@ -42,7 +42,7 @@ int main() {
 
     DraggableObject* draggable = new DraggableObject(np, 0);
     dom->register_object(*draggable);
-    draggable->hook_drag_event("d", ffd->force_vertex_update, ffd);
+    draggable->hook_drag_event("d", ffd->handle_drag, ffd);
 
     framework->define_key("e", "edge_span_test", update_edge_span, ffd);
     framework->main_loop();

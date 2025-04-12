@@ -17,11 +17,6 @@ void FreeFormDeform::handle_drag(const Event* e, void* args) {
     ffd->update_vertices(e->get_name() != "FFD_DRAG_EVENT");
 }
 
-FreeFormDeform::~FreeFormDeform() {
-    // Delete the Lattice:
-    delete _lattice;
-}
-
 double FreeFormDeform::factorial(double n) {
     if (n == 0) {
         return 1;
@@ -29,19 +24,11 @@ double FreeFormDeform::factorial(double n) {
     return n * factorial(n - 1);
 }
 
-int FreeFormDeform::binomial_coeff(int n, int k) {
-    return factorial(n) / (factorial(k) * factorial(n - k));
-}
-
-double FreeFormDeform::bernstein(double v, double n, double x) {
-    return binomial_coeff(n, v) * pow(x, v) * pow(1 - x, n - v);
-}
-
 /*
 Returns the actual index of the control point given i, j, k.
 */
 int FreeFormDeform::get_point_index(int i, int j, int k) {
-    pvector<int> spans = _lattice->get_edge_spans();
+    std::vector<int>& spans = _lattice->get_edge_spans();
     return i * (spans[2] + 1) * (spans[2] + 1) + j * (spans[1] + 1) + k;
 }
 
@@ -49,7 +36,7 @@ int FreeFormDeform::get_point_index(int i, int j, int k) {
 Returns i, j, k given the index.
 */
 std::vector<int> FreeFormDeform::get_ijk(int index) {
-    pvector<int> spans = _lattice->get_edge_spans();
+    std::vector<int>& spans = _lattice->get_edge_spans();
     int l = spans[0];
     int m = spans[1];
     int n = spans[2];
@@ -66,7 +53,8 @@ std::vector<int> FreeFormDeform::get_ijk(int index) {
 Returns true/false if the given control point influences the given vertex (stu).
 */
 bool FreeFormDeform::is_influenced(int index, double s, double t, double u) {
-    pvector<int> spans = _lattice->get_edge_spans();
+    std::vector<int>& spans = _lattice->get_edge_spans();
+
     NodePath &point_np = _lattice->get_control_point(index);
 
     std::vector<int> ijk = get_ijk(index);
@@ -158,7 +146,7 @@ void FreeFormDeform::transform_vertex(GeomVertexData* data, GeomNode* geom_node,
 }
 
 LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
-    pvector<int> spans = _lattice->get_edge_spans();
+    std::vector<int> spans = _lattice->get_edge_spans();
 
     double bernstein_coeff;
     int p_index = 0;
@@ -281,20 +269,21 @@ void FreeFormDeform::process_node() {
             v_reader = GeomVertexReader(vertex_data, "vertex");
             row = 0;
             while (!v_reader.is_at_end()) {
-                vertex_object_space.clear();
                 vertex = v_reader.get_data3f();
-
-                vertex_minus_min = vertex - _lattice->get_x0();
-
-                double s = (T.cross(U).dot(vertex_minus_min)) / T.cross(U).dot(S);
-                double t = (S.cross(U).dot(vertex_minus_min)) / S.cross(U).dot(T);
-                double u = (S.cross(T).dot(vertex_minus_min)) / S.cross(T).dot(U);
-
-                vertex_object_space.push_back(vertex);
-                vertex_object_space.push_back(LPoint3f(s, t, u));
 
                 // We only want the default vertices once.
                 if (!captured_default_vertices) {
+                    vertex_object_space.clear();
+
+                    vertex_minus_min = vertex - _lattice->get_x0();
+
+                    double s = (T.cross(U).dot(vertex_minus_min)) / T.cross(U).dot(S);
+                    double t = (S.cross(U).dot(vertex_minus_min)) / S.cross(U).dot(T);
+                    double u = (S.cross(T).dot(vertex_minus_min)) / S.cross(T).dot(U);
+
+                    vertex_object_space.push_back(vertex);
+                    vertex_object_space.push_back(LPoint3f(s, t, u));
+
                     _default_vertex_ws_os[geom_node].push_back(vertex_object_space);
                 }
 
@@ -307,6 +296,10 @@ void FreeFormDeform::process_node() {
 
                 // We're going to determine if this vertex is modified by a control point.
                 for (size_t ctrl_i = 0; ctrl_i < _lattice->get_num_control_points(); ctrl_i++) {
+                    // TODO, is_influenced(i, [s,t,u])
+                    double s = _default_vertex_ws_os[geom_node][row][1][0];
+                    double t = _default_vertex_ws_os[geom_node][row][1][1];
+                    double u = _default_vertex_ws_os[geom_node][row][1][2];
                     influenced = is_influenced(ctrl_i, s, t, u);
                     if (influenced) {
                         _influenced_vertices[geom_node][ctrl_i].push_back(row);
@@ -319,12 +312,3 @@ void FreeFormDeform::process_node() {
     }
     captured_default_vertices = true;
 }
-
-void FreeFormDeform::set_edge_spans(int size_x, int size_y, int size_z) {
-    _lattice->set_edge_spans(size_x, size_y, size_y);
-}
-
-LPoint3f FreeFormDeform::point_at_axis(double axis_value, LPoint3f point, LVector3f vector, int axis) {
-    return point + vector * ((axis_value - point[axis]) / vector[axis]);
-}
-
