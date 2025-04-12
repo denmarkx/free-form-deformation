@@ -183,3 +183,10 @@ Returns tag set by DraggableObject(string tag).
 std::string DraggableObject::get_tag() const {
     return _tag;
 }
+
+/*
+* Returns boolean if anything has been selected from this object.
+*/
+bool DraggableObject::has_selected() const {
+    return _selected.size() > 0;
+}

@@ -1,8 +1,6 @@
 #include "freeFormDeform.h"
 #include <unordered_set>
 
-static void handle_drag(const Event* e, void* args);
-
 FreeFormDeform::FreeFormDeform(NodePath np, NodePath render) {
     _np = np;
     _render = render;
@@ -13,16 +11,10 @@ FreeFormDeform::FreeFormDeform(NodePath np, NodePath render) {
     process_node();
 }
 
-static void handle_drag(const Event* e, void* args) {
+void FreeFormDeform::handle_drag(const Event* e, void* args) {
     FreeFormDeform* ffd = (FreeFormDeform*)args;
     ffd->process_node();
-    ffd->update_vertices();
-}
-
-void FreeFormDeform::force_vertex_update(const Event* e, void* args) {
-    FreeFormDeform* ffd = (FreeFormDeform*)args;
-    ffd->process_node();
-    ffd->update_vertices(true);
+    ffd->update_vertices(e->get_name() != "FFD_DRAG_EVENT");
 }
 
 FreeFormDeform::~FreeFormDeform() {

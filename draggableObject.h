@@ -18,6 +18,7 @@ public:
     std::string get_event_name() const;
     std::string get_tag() const;
     pvector<NodePath> get_selected();
+    bool has_selected() const;
 
     virtual void select(NodePath& np);
     virtual void deselect(NodePath& np);
