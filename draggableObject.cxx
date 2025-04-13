@@ -43,6 +43,8 @@ DraggableObject::~DraggableObject() {
 
 */
 void DraggableObject::watch_node_path(NodePath& parent, int traverse_num) {
+    _nodes.clear();
+    _selected.clear();
     _parent = parent;
     _traverse_num = traverse_num;
     traverse();

@@ -9,7 +9,7 @@ Initializes everything for the DraggableObjectManager.
 parent (normally rendere) is what the CollisionTraverser
 eventually calls traverse on every click.
 */
-DraggableObjectManager::DraggableObjectManager(NodePath &parent, NodePath &camera_np, NodePath &mouse_np) {
+DraggableObjectManager::DraggableObjectManager(NodePath& parent, NodePath& camera_np, NodePath& mouse_np) {
     setup_nodes(parent, camera_np, mouse_np);
 }
 
@@ -38,7 +38,7 @@ DraggableObjectManager::~DraggableObjectManager() {
 /*
 Sets the parent, camera, and mouse and its underlying nodes.
 */
-void DraggableObjectManager::setup_nodes(NodePath &parent, NodePath &camera_np, NodePath &mouse_np) {
+void DraggableObjectManager::setup_nodes(NodePath& parent, NodePath& camera_np, NodePath& mouse_np) {
     _parent = parent;
     _camera_np = camera_np;
     _camera = DCAST(Camera, _camera_np.node());
@@ -51,7 +51,10 @@ void DraggableObjectManager::setup_nodes(NodePath &parent, NodePath &camera_np, 
 Registers object with the manager.
 */
 void DraggableObjectManager::register_object(DraggableObject& draggable) {
-    _objects.push_back(&draggable);
+    // Ignore if already registered.
+    if (std::find(_objects.begin(), _objects.end(), &draggable) == _objects.end()) {
+        _objects.push_back(&draggable);
+    }
 
     // Check if this has a tag:
     if (draggable.is_watching_tag()) {

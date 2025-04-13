@@ -26,6 +26,16 @@ void lattice_debug(const Event* e, void* args) {
     std::cout << _ffd->get_lattice() << "\n";
 }
 
+void task_event_debug(const Event* e) {
+    EventHandler *eh = EventHandler::get_global_event_handler();
+    eh->write(nout);
+    std::cout << "\n";
+
+    AsyncTaskManager* tm = AsyncTaskManager::get_global_ptr();
+    tm->write(nout);
+    std::cout << "\n";
+}
+
 int main() {
 
     PandaFramework *framework = new PandaFramework();
@@ -59,6 +69,7 @@ int main() {
 
     framework->define_key("l", "ls", ls, window);
     framework->define_key("c", "lattice_Debug", lattice_debug, ffd);
+    framework->define_key("t", "task_event_debug", task_event_debug);
 
     framework->main_loop();
     return 0;
