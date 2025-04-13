@@ -3,6 +3,7 @@
 
 FreeFormDeform::FreeFormDeform(NodePath np, NodePath render) {
     _np = np;
+    _geom_node_collection = _np.find_all_matches("**/+GeomNode");
     _top_node = _np.get_top();
     _render = render;
 
@@ -56,10 +57,10 @@ int FreeFormDeform::get_point_index(int i, int j, int k) {
 /*
 Returns true/false if the given control point influences the given vertex (stu).
 */
-bool FreeFormDeform::is_influenced(int index, double s, double t, double u) {
+bool FreeFormDeform::is_influenced(int index, LVector3f stu) {
     std::vector<int>& spans = _lattice->get_edge_spans();
     std::vector<int> &ijk = _lattice->get_ijk(index);
-    return bernstein(ijk[0], 0, spans[0], s) * bernstein(ijk[1], 1, spans[1], t) * bernstein(ijk[2], 2, spans[2], u);
+    return bernstein(ijk[0], 0, spans[0], stu[0]) * bernstein(ijk[1], 1, spans[1], stu[1]) * bernstein(ijk[2], 2, spans[2], stu[2]);
 }
 
 /*
@@ -186,9 +187,7 @@ void FreeFormDeform::update_vertices(bool force) {
     PT(GeomVertexData) vertex_data;
     PT(Geom) geom;
 
-    // TODO: outside of scope of draggable-object-mgr branch,
-    // but we apparently don't need to run set_geom all the time.
-    // there's some optimizations to be made here and in transform_vertex.
+    // Iterate through geom_nodes and their child geoms:
     for (GeomNode* geom_node : _geom_nodes) {
         for (size_t i = 0; i < geom_node->get_num_geoms(); i++) {
             geom = geom_node->modify_geom(i);
@@ -217,10 +216,8 @@ void FreeFormDeform::update_vertices(bool force) {
 /*
 */
 void FreeFormDeform::process_node() {
-    NodePathCollection collection = _np.find_all_matches("**/+GeomNode");
-
     // Ignore if there's nothing.
-    if (collection.get_num_paths() == 0) {
+    if (_geom_node_collection.get_num_paths() == 0) {
         return;
     }
 
@@ -253,8 +250,8 @@ void FreeFormDeform::process_node() {
     LVector3f x0 = _lattice->get_x0();
     LVector3f x1 = _lattice->get_x1();
 
-    for (size_t i = 0; i < collection.get_num_paths(); i++) {
-        geom_node = DCAST(GeomNode, collection.get_path(i).node());
+    for (size_t i = 0; i < _geom_node_collection.get_num_paths(); i++) {
+        geom_node = DCAST(GeomNode, _geom_node_collection.get_path(i).node());
         for (size_t j = 0; j < geom_node->get_num_geoms(); j++) {
             geom = geom_node->get_geom(j);
             vertex_data = geom->get_vertex_data();
@@ -290,11 +287,7 @@ void FreeFormDeform::process_node() {
 
                 // We're going to determine if this vertex is modified by a control point.
                 for (size_t ctrl_i = 0; ctrl_i < _lattice->get_num_control_points(); ctrl_i++) {
-                    // TODO, is_influenced(i, [s,t,u])
-                    double s = _default_vertex_ws_os[geom_node][row][1][0];
-                    double t = _default_vertex_ws_os[geom_node][row][1][1];
-                    double u = _default_vertex_ws_os[geom_node][row][1][2];
-                    influenced = is_influenced(ctrl_i, s, t, u);
+                    influenced = is_influenced(ctrl_i, _default_vertex_ws_os[geom_node][row][1]);
                     if (influenced) {
                         _influenced_vertices[geom_node][ctrl_i].push_back(row);
                     }

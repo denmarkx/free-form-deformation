@@ -36,7 +36,7 @@ private:
     inline double bernstein(double v, int i, double n, double x);
 
     double factorial(double n);
-    bool is_influenced(int index, double s, double t, double u);
+    bool is_influenced(int index, LVector3f stu);
     int get_point_index(int i, int j, int k);
     std::vector<int> get_ijk(int index);
 
@@ -67,6 +67,7 @@ private:
 
     ObjectHandles* _object_handles;
     pvector<int> _selected_points;
+    NodePathCollection _geom_node_collection;
 };
 
 #include "freeFormDeform.I"
