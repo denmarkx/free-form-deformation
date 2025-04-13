@@ -44,6 +44,7 @@ private:
 
     NodePath _np;
     NodePath _render;
+    NodePath _top_node;
     Lattice* _lattice;
 
     LVector3f deform_vertex(double s, double t, double u);

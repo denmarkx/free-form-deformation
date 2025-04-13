@@ -96,7 +96,7 @@ void Lattice::create_edges() {
     int total = l_n * (_plane_spans[1] + 1);
 
     // Control Point:
-    NodePath pnt;
+    NodePath &pnt = NodePath();
 
     bool go_down = false;
 
@@ -224,7 +224,7 @@ Updates the adjacent edges to match the given control point.
 
 void Lattice::update_edges(int index) {
     // Update the edges:
-    pvector<int> adjacent_points = point_map[index];
+    pvector<int> &adjacent_points = point_map[index];
     for (int i = 0; i < adjacent_points.size(); i++) {
         for (int j = 0; j < point_to_edge_vertex[adjacent_points[i]].size(); j++) {
             if (adjacent_points[i] == index) {
@@ -286,10 +286,9 @@ void Lattice::calculate_lattice_vec() {
     }
 
     LPoint3f delta = _edgesNp.get_pos(_np.get_top()) - _edge_pos;
-    
+
     for (NodePath& cp : _control_points) {
-        LPoint3f pos = cp.get_pos();
-        cp.set_pos(pos + delta);
+        cp.set_pos(cp.get_pos() + delta);
     }
 
     _edge_pos = _edgesNp.get_pos(_np.get_top());
@@ -324,3 +323,42 @@ bool Lattice::point_in_range(LPoint3f &point) {
     }
     return true;
 }
+
+/*
+* Inherits DraggableObject::select, updates internal tracking
+* of selected control point indices.
+*/
+void Lattice::select(NodePath& np) {
+    DraggableObject::select(np);
+
+    // Ignore if we're not a control point:
+    if (!np.has_net_tag("control_point")) {
+        return;
+    }
+
+    // Push to _selected_control_points:
+    _selected_control_points.push_back(std::stoi(np.get_net_tag("control_point")));
+}
+/*
+* Inherits DraggableObject::deselect, updates internal tracking
+* of deselected control point indices.
+*/
+void Lattice::deselect(NodePath& np) {
+    DraggableObject::deselect(np);
+
+    // Ignore if we're not a control point:
+    if (!np.has_net_tag("control_point")) {
+        return;
+    }
+
+    // Remove:
+    _selected_control_points.erase(
+        std::remove(
+            _selected_control_points.begin(),
+            _selected_control_points.end(),
+            std::stoi(np.get_net_tag("control_point"))
+        ),
+        _selected_control_points.end()
+    );
+}
+

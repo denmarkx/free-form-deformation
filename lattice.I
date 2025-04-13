@@ -56,7 +56,7 @@ inline void Lattice::set_control_point_pos(LPoint3f pos, int index) {
 /*
 Returns point of control point relative to other NodePath.
 */
-inline LPoint3f Lattice::get_control_point_pos(int i, const NodePath& other) {
+inline LPoint3f &Lattice::get_control_point_pos(int i, const NodePath& other) {
     return _control_points[i].get_pos(other);
 }
 
@@ -79,4 +79,11 @@ Returns vector of size 3 representing i, j, k given the control point index.
 */
 inline std::vector<int>& Lattice::get_ijk(int index) {
     return _point_ijk_map[index];
+}
+
+/*
+ * Returns vector of integers representing the indices of selected control points.
+*/
+inline std::vector<int>& Lattice::get_selected_control_points() {
+    return _selected_control_points;
 }

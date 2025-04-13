@@ -27,8 +27,9 @@ public:
 
     void set_control_point_pos(LPoint3f pos, int index);
     inline NodePath& get_control_point(int index);
-    inline LPoint3f get_control_point_pos(int i, const NodePath& other);
+    inline LPoint3f &get_control_point_pos(int i, const NodePath& other);
     inline int get_num_control_points();
+    inline std::vector<int>& get_selected_control_points();
 
     bool point_in_range(LPoint3f& point);
 
@@ -36,6 +37,10 @@ public:
     inline LPoint3f get_x1() const;
 
     inline std::vector<int>& get_ijk(int index);
+
+    virtual void select(NodePath& np);
+    virtual void deselect(NodePath& np);
+
     LPoint3f _edge_pos;
     NodePath _edgesNp;
 
@@ -72,6 +77,9 @@ private:
 
     // control point index -> [i,j,k]
     std::unordered_map<int, std::vector<int>> _point_ijk_map;
+
+    // Selected control points.
+    std::vector<int> _selected_control_points;
 
     int num_segments = -1;
     

@@ -3,6 +3,7 @@
 
 FreeFormDeform::FreeFormDeform(NodePath np, NodePath render) {
     _np = np;
+    _top_node = _np.get_top();
     _render = render;
 
     _lattice = new Lattice(_np);
@@ -125,7 +126,7 @@ void FreeFormDeform::transform_vertex(GeomVertexData* data, GeomNode* geom_node,
     LPoint3f default_vertex, default_object_space; // (stu)
     LVector3f x_ffd;
 
-    pvector<int> influenced_arrays = _influenced_vertices[geom_node][index];
+    pvector<int> &influenced_arrays = _influenced_vertices[geom_node][index];
     pvector<LPoint3f> default_vertex_pos;
 
     int vertex = 0;
@@ -159,9 +160,7 @@ LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
             for (int k = 0; k <= spans[2]; k++) {
                 bernstein_coeff = bernstein(k, 2, spans[2], u);
 
-                LPoint3f p_ijk = _lattice->get_control_point_pos(p_index, _np.get_top());
-                
-                vec_k += bernstein_coeff * p_ijk;
+                vec_k += bernstein_coeff * _lattice->get_control_point_pos(p_index, _top_node);
 
                 p_index++;
             }
@@ -176,14 +175,7 @@ LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
 }
 
 void FreeFormDeform::update_vertices(bool force) {
-    std::vector<int> control_point_indices;
-    
-    for (NodePath& np : _lattice->get_selected()) {
-        if (np.get_name() == "lattice_edges") {
-            break;
-        }
-        control_point_indices.push_back(atoi(np.get_net_tag("control_point").c_str()));
-    }
+    std::vector<int> &control_point_indices = _lattice->get_selected_control_points();
 
     PT(GeomVertexData) vertex_data;
     PT(Geom) geom;
@@ -209,8 +201,6 @@ void FreeFormDeform::update_vertices(bool force) {
             }
             // We're going to reset the vertices that are no longer apart of the lattice.
             reset_vertices(vertex_data, geom_node, control_point_indices);
-            geom->set_vertex_data(vertex_data);
-            geom_node->set_geom(i, geom);
         }
     }
 
