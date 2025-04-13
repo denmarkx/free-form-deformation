@@ -24,8 +24,12 @@ public:
     void process_node();
     void update_vertices(bool force = false);
     void reset_vertices(GeomVertexData* data, GeomNode* geom_node, std::vector<int>& indices);
+    
+    Lattice& get_lattice();
 
     static void handle_drag(const Event* e, void* args);
+
+    friend std::ostream& operator<<(std::ostream& os, FreeFormDeform& obj);
 
 private:
     void transform_vertex(GeomVertexData* data, GeomNode* geom_node, std::vector<int>& control_points);

@@ -299,3 +299,28 @@ void FreeFormDeform::process_node() {
     }
     captured_default_vertices = true;
 }
+
+
+/*
+* Outputs useful info regarding FreeFormDeform instance.
+*/
+std::ostream& operator<<(std::ostream& os, FreeFormDeform& obj) {
+    os << "FreeFormDeform:\n";
+    os << " # _geom_nodes: " << obj._geom_nodes.size() << "\n";
+    os << " # _influenced_vertices[k]: " << obj._influenced_vertices.size() << "\n";
+    for (GeomNode* g_n : obj._geom_nodes) {
+        os << "  " << obj._influenced_vertices[g_n].size() << "\n";
+    }
+    os << " # _non_influenced_vertex: " << obj._non_influenced_vertex.size() << "\n";
+    for (GeomNode* g_n : obj._geom_nodes) {
+        os << "  " << obj._non_influenced_vertex[g_n].size() << "\n";
+    }
+    os << " # _default_vertex_ws_os: " << obj._default_vertex_ws_os.size() << "\n";
+    for (GeomNode* g_n : obj._geom_nodes) {
+        os << "  " << obj._default_vertex_ws_os[g_n].size() << "\n";
+    }
+    os << " # _v_n_comb_table: " << obj._v_n_comb_table.size() << "\n";
+    os << " # _selected_points: " << obj._selected_points.size() << "\n";
+    os << " # _geom_node_collection: " << obj._geom_node_collection.get_num_paths() << "\n";
+    return os;
+}

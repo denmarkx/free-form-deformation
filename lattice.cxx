@@ -365,3 +365,18 @@ void Lattice::deselect(NodePath& np) {
     );
 }
 
+/*
+* Outputs useful info regarding lattice.
+*/
+std::ostream& operator<<(std::ostream& os, Lattice& obj) {
+    os << "Lattice:\n";
+    os << " # Control Points: " << obj.get_num_control_points() << "\n";
+    os << " # point_map: " << obj.point_map.size() << "\n";
+    os << " # point_map_future: " << obj.point_map_future.size() << "\n";
+    os << " # _point_ijk_map: " << obj._point_ijk_map.size() << "\n";
+    os << " # _selected_control_points: " << obj._selected_control_points.size() << "\n";
+    os << " Edge Spans: [" << obj.get_edge_spans()[0] << ", " << obj.get_edge_spans()[1] << ", " << obj.get_edge_spans()[2] << "]\n";
+    os << " x0:" << obj.get_x0() << "\n";
+    os << " x1:" << obj.get_x1() << "\n";
+    return os;
+}

@@ -30,3 +30,10 @@ inline int FreeFormDeform::binomial_coeff(int n, int k) {
 inline double FreeFormDeform::bernstein(double v, int i, double n, double x) {
     return _v_n_comb_table[i][v] * pow(x, v) * pow(1 - x, n - v);
 }
+
+/*
+* Returns Lattice
+*/
+inline Lattice& FreeFormDeform::get_lattice() {
+    return *_lattice;
+}

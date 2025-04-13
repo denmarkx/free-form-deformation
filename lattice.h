@@ -44,6 +44,7 @@ public:
     LPoint3f _edge_pos;
     NodePath _edgesNp;
 
+    friend std::ostream& operator<<(std::ostream& os, Lattice& obj);
 
 private:
     void create_point(LPoint3f point, const double radius, int i, int j, int k);

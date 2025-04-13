@@ -20,6 +20,11 @@ void ls(const Event* e, void* args) {
     window->get_render().ls();
 }
 
+void lattice_debug(const Event* e, void* args) {
+    FreeFormDeform* _ffd = (FreeFormDeform*)args;
+    std::cout << *_ffd << "\n\n";
+    std::cout << _ffd->get_lattice() << "\n";
+}
 
 int main() {
 
@@ -53,6 +58,7 @@ int main() {
     framework->define_key("e", "edge_span_test", update_edge_span, ffd);
 
     framework->define_key("l", "ls", ls, window);
+    framework->define_key("c", "lattice_Debug", lattice_debug, ffd);
 
     framework->main_loop();
     return 0;
