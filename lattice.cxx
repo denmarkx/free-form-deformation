@@ -242,7 +242,6 @@ void Lattice::reset_edges() {
     point_map_future.clear();
     point_map.clear();
     point_to_edge_vertex.clear();
-    _point_ijk_map.clear();
     num_segments = -1;
 }
 
@@ -251,6 +250,7 @@ void Lattice::reset_control_points() {
         c_point.remove_node();
     }
     _control_points.clear();
+    _point_ijk_map.clear();
 }
 
 void Lattice::create_point(LPoint3f point, const double radius, int i, int j, int k) {
