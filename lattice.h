@@ -10,6 +10,8 @@
 #include "draggableObject.h"
 #include "draggableObjectManager.h"
 
+#include <unordered_map>
+
 class Lattice : public NodePath, public DraggableObject {
 public:
     inline Lattice(NodePath np);
@@ -33,6 +35,7 @@ public:
     inline LPoint3f get_x0() const;
     inline LPoint3f get_x1() const;
 
+    inline std::vector<int>& get_ijk(int index);
     LPoint3f _edge_pos;
     NodePath _edgesNp;
 
@@ -66,6 +69,9 @@ private:
     pmap<int, pvector<int>> point_map;
 
     pmap<int, pvector<int>> point_map_future;
+
+    // control point index -> [i,j,k]
+    std::unordered_map<int, std::vector<int>> _point_ijk_map;
 
     int num_segments = -1;
     

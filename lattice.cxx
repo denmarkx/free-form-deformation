@@ -242,6 +242,7 @@ void Lattice::reset_edges() {
     point_map_future.clear();
     point_map.clear();
     point_to_edge_vertex.clear();
+    _point_ijk_map.clear();
     num_segments = -1;
 }
 
@@ -260,6 +261,9 @@ void Lattice::create_point(LPoint3f point, const double radius, int i, int j, in
     c_point.set_color(1, 0, 1, 1);
     c_point.set_tag("control_point", std::to_string(_control_points.size()));
     _control_points.push_back(c_point);
+
+    // Place in point_ijk_map:
+    _point_ijk_map[_control_points.size() - 1] = std::vector<int>{ i, j, k };
 }
 
 void Lattice::set_edge_spans(int size_x, int size_y, int size_z) {

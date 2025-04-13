@@ -51,32 +51,13 @@ int FreeFormDeform::get_point_index(int i, int j, int k) {
     return i * (spans[2] + 1) * (spans[2] + 1) + j * (spans[1] + 1) + k;
 }
 
-/*
-Returns i, j, k given the index.
-*/
-std::vector<int> FreeFormDeform::get_ijk(int index) {
-    std::vector<int>& spans = _lattice->get_edge_spans();
-    int l = spans[0];
-    int m = spans[1];
-    int n = spans[2];
-
-    int i = (index / ((n + 1) * (m + 1))) % (l + 1);
-    int j = (index / (n + 1)) % (m + 1);
-    int k = (index % (n + 1));
-
-    std::vector<int> ijk = { i, j, k };
-    return ijk;
-}
 
 /*
 Returns true/false if the given control point influences the given vertex (stu).
 */
 bool FreeFormDeform::is_influenced(int index, double s, double t, double u) {
     std::vector<int>& spans = _lattice->get_edge_spans();
-
-    NodePath &point_np = _lattice->get_control_point(index);
-
-    std::vector<int> ijk = get_ijk(index);
+    std::vector<int> &ijk = _lattice->get_ijk(index);
     return bernstein(ijk[0], 0, spans[0], s) * bernstein(ijk[1], 1, spans[1], t) * bernstein(ijk[2], 2, spans[2], u);
 }
 

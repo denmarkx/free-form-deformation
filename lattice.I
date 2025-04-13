@@ -73,3 +73,10 @@ Returns vector of size 3 representing l, m, n plane divisions.
 inline std::vector<int>& Lattice::get_edge_spans() {
     return _plane_spans;
 }
+
+/*
+Returns vector of size 3 representing i, j, k given the control point index.
+*/
+inline std::vector<int>& Lattice::get_ijk(int index) {
+    return _point_ijk_map[index];
+}
