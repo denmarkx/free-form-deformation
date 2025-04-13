@@ -12,8 +12,14 @@
 
 void update_edge_span(const Event* e, void* args) {
     FreeFormDeform *_ffd = (FreeFormDeform*)args;
-    _ffd->set_edge_spans(5, 5, 5);
+    _ffd->set_edge_spans(2, 3, 2);
 }
+
+void ls(const Event* e, void* args) {
+    WindowFramework* window = (WindowFramework*)args;
+    window->get_render().ls();
+}
+
 
 int main() {
 
@@ -45,6 +51,9 @@ int main() {
     draggable->hook_drag_event("d", ffd->handle_drag, ffd);
 
     framework->define_key("e", "edge_span_test", update_edge_span, ffd);
+
+    framework->define_key("l", "ls", ls, window);
+
     framework->main_loop();
     return 0;
 }

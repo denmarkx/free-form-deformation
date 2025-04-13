@@ -16,7 +16,6 @@ void Lattice::create_control_points(const double radius) {
     reset_control_points();
 
     LPoint3f point;
-    _edges = LineSegs("lattice_edges");
 
     for (size_t i = 0; i <= _plane_spans[0]; i++) {
         for (size_t j = 0; j <= _plane_spans[1]; j++) {
@@ -82,6 +81,9 @@ void Lattice::push_point_relationship(int index, int adjacent_index) {
 
 void Lattice::create_edges() {
     reset_edges();
+
+    _edges = LineSegs("lattice_edges");
+
     // TODO: there's a lot of dead vertices here because i didn't realize at the time that
     // both move and draw to pushes back on segs. an optimal approach would be to try and 
     // connect multiple line segments to a given vertex.
@@ -238,6 +240,7 @@ void Lattice::update_edges(int index) {
 }
 
 void Lattice::reset_edges() {
+    _edgesNp.remove_node();
     _edges.reset();
     point_map_future.clear();
     point_map.clear();
