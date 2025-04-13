@@ -13,6 +13,8 @@
 #include "draggableObject.h"
 #include "objectHandles.h"
 
+#include <unordered_map>
+
 class DraggableObjectManager {
 public:
     DraggableObjectManager(NodePath& parent, NodePath& camera_np, NodePath& mouse_np);
@@ -24,6 +26,9 @@ public:
     void register_object(DraggableObject& draggable);
     void click();
     void deselect_all();
+
+    void register_event(DraggableObject& draggable, std::string event_name);
+    inline CPT(Event) get_event(DraggableObject& draggable);
 
     static DraggableObjectManager* get_global_ptr();
 
@@ -53,7 +58,11 @@ private:
 
     ObjectHandles* object_handles;
 
-    std::map<std::string, DraggableObject*> _tag_map;
+    // tag -> DraggableObject
+    std::unordered_map<std::string, DraggableObject*> _tag_map;
+
+    // DraggableObject -> const Event*
+    std::unordered_map<DraggableObject*, CPT(Event)> _event_map;
 
     static DraggableObjectManager* _global_ptr;
 };

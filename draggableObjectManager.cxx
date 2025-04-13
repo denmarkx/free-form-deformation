@@ -155,7 +155,7 @@ void DraggableObjectManager::click() {
     DraggableObject *draggable;
 
     // Check to see if we have any of special tags:
-    for (std::map<std::string, DraggableObject*>::iterator it = _tag_map.begin(); it != _tag_map.end(); it++) {
+    for (std::unordered_map<std::string, DraggableObject*>::iterator it = _tag_map.begin(); it != _tag_map.end(); it++) {
         if (into_np.has_net_tag(it->first)) {
             draggable = it->second;
             draggable->select(into_np);
@@ -257,8 +257,7 @@ static AsyncTask::DoneStatus drag_task(GenericAsyncTask *task, void* args) {
 
     // Dispatch the event to everyone listening:
     for (DraggableObject *draggable : dom->_objects) {
-        CPT(Event) e = new Event(draggable->get_event_name());
-        dom->event_handler->dispatch_event(e);
+        dom->event_handler->dispatch_event(dom->get_event(*draggable));
     }
     return AsyncTask::DS_cont;
 }
@@ -282,4 +281,19 @@ DraggableObjectManager* DraggableObjectManager::get_global_ptr() {
         _global_ptr = new DraggableObjectManager();
     }
     return _global_ptr;
+}
+
+/*
+* Internally connects the given event_name to the draggable.
+*/
+void DraggableObjectManager::register_event(DraggableObject& draggable, std::string event_name) {
+    // Keep a handle on the event:
+    _event_map[&draggable] = new Event(event_name);
+}
+
+/*
+* Returns Event linked to the DraggableObject.
+*/
+inline CPT(Event) DraggableObjectManager::get_event(DraggableObject& draggable) {
+    return _event_map[&draggable];
 }

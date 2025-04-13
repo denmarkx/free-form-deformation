@@ -1,4 +1,5 @@
 #include "draggableObject.h"
+#include "draggableObjectManager.h"
 
 /*
 Initializer for DraggableObject. Parent is the top level NodePath of the object(s)
@@ -158,7 +159,9 @@ void DraggableObject::deselect() {
 */
 void DraggableObject::hook_drag_event(std::string event_name, EventHandler::EventCallbackFunction function, void* args) {
     EventHandler *event_handler = EventHandler::get_global_event_handler();
+    DraggableObjectManager* dom = DraggableObjectManager::get_global_ptr();
     event_handler->add_hook(event_name, function, args);
+    dom->register_event(*this, event_name);
     _event_name = event_name;
 }
 
