@@ -28,7 +28,7 @@ public:
     static void handle_drag(const Event* e, void* args);
 
 private:
-    void transform_vertex(GeomVertexData* data, GeomNode* geom, int index);
+    void transform_vertex(GeomVertexData* data, GeomNode* geom_node, std::vector<int>& control_points);
     void transform_all_influenced(GeomVertexData* data, GeomNode* geom_node);
     void populate_lookup_table();
 

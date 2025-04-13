@@ -120,18 +120,24 @@ void FreeFormDeform::transform_all_influenced(GeomVertexData* data, GeomNode* ge
     }
 }
 
-void FreeFormDeform::transform_vertex(GeomVertexData* data, GeomNode* geom_node, int index) {
+void FreeFormDeform::transform_vertex(GeomVertexData* data, GeomNode* geom_node, std::vector<int>& control_points) {
     GeomVertexWriter rewriter(data, "vertex");
 
     LPoint3f default_vertex, default_object_space; // (stu)
     LVector3f x_ffd;
 
-    pvector<int> &influenced_arrays = _influenced_vertices[geom_node][index];
+    std::unordered_set<int> vertices;
+    for (size_t i = 0; i < control_points.size(); i++) {
+        pvector<int>& influenced_arrays = _influenced_vertices[geom_node][i];
+        for (int v : influenced_arrays) {
+            vertices.insert(v);
+        }
+    }
     pvector<LPoint3f> default_vertex_pos;
 
     int vertex = 0;
-    for (int i = 0; i < influenced_arrays.size(); i++) {
-        vertex = influenced_arrays[i];
+    for (int i = 0; i < vertices.size(); i++) {
+        vertex = *vertices.find(i);
         default_vertex_pos = _default_vertex_ws_os[geom_node][vertex];
 
         rewriter.set_row(vertex);
@@ -195,9 +201,7 @@ void FreeFormDeform::update_vertices(bool force) {
             }
             else {
                 // Otherwise, deform only what is influenced by the selected control points.
-                for (size_t j = 0; j < control_point_indices.size(); j++) {
-                    transform_vertex(vertex_data, geom_node, control_point_indices[j]);
-                }
+                transform_vertex(vertex_data, geom_node, control_point_indices);
             }
             // We're going to reset the vertices that are no longer apart of the lattice.
             reset_vertices(vertex_data, geom_node, control_point_indices);
