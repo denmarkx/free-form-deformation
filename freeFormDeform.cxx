@@ -8,7 +8,26 @@ FreeFormDeform::FreeFormDeform(NodePath np, NodePath render) {
     _lattice = new Lattice(_np);
     _lattice->reparent_to(_render);
     _lattice->hook_drag_event("FFD_DRAG_EVENT", handle_drag, this);
+
+    populate_lookup_table();
     process_node();
+}
+
+/*
+* See also: freeFormDeform.I (berstein)
+* Computes the binomial_coeff between two variables:
+*   n: every edge span
+*   v: range: [0, n]
+*/
+void FreeFormDeform::populate_lookup_table() {
+    _v_n_comb_table.clear();
+    for (int& span : _lattice->get_edge_spans()) { // ijk range = 0->span
+        std::vector<int> table;
+        for (int i = 0; i <= span; i++) {
+            table.push_back(binomial_coeff(span, i));
+        }
+        _v_n_comb_table.push_back(table);
+    }
 }
 
 void FreeFormDeform::handle_drag(const Event* e, void* args) {
@@ -58,7 +77,7 @@ bool FreeFormDeform::is_influenced(int index, double s, double t, double u) {
     NodePath &point_np = _lattice->get_control_point(index);
 
     std::vector<int> ijk = get_ijk(index);
-    return bernstein(ijk[0], spans[0], s) * bernstein(ijk[1], spans[1], t) * bernstein(ijk[2], spans[2], u);
+    return bernstein(ijk[0], 0, spans[0], s) * bernstein(ijk[1], 1, spans[1], t) * bernstein(ijk[2], 2, spans[2], u);
 }
 
 /*
@@ -146,7 +165,7 @@ void FreeFormDeform::transform_vertex(GeomVertexData* data, GeomNode* geom_node,
 }
 
 LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
-    std::vector<int> spans = _lattice->get_edge_spans();
+    std::vector<int>& spans = _lattice->get_edge_spans();
 
     double bernstein_coeff;
     int p_index = 0;
@@ -157,7 +176,7 @@ LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
         for (int j = 0; j <= spans[1]; j++) {
             LVector3f vec_k = LVector3f(0);
             for (int k = 0; k <= spans[2]; k++) {
-                bernstein_coeff = bernstein(k, spans[2], u);
+                bernstein_coeff = bernstein(k, 2, spans[2], u);
 
                 LPoint3f p_ijk = _lattice->get_control_point_pos(p_index, _np.get_top());
                 
@@ -165,10 +184,10 @@ LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
 
                 p_index++;
             }
-            bernstein_coeff = bernstein(j, spans[1], t);
+            bernstein_coeff = bernstein(j, 1, spans[1], t);
             vec_j += bernstein_coeff * vec_k;
         }
-        bernstein_coeff = bernstein(i, spans[0], s);
+        bernstein_coeff = bernstein(i, 0, spans[0], s);
         vec_i += bernstein_coeff * vec_j;
     }
 

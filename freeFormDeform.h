@@ -30,9 +30,10 @@ public:
 private:
     void transform_vertex(GeomVertexData* data, GeomNode* geom, int index);
     void transform_all_influenced(GeomVertexData* data, GeomNode* geom_node);
+    void populate_lookup_table();
 
     inline int binomial_coeff(int n, int k);
-    inline double bernstein(double v, double n, double x);
+    inline double bernstein(double v, int i, double n, double x);
 
     double factorial(double n);
     bool is_influenced(int index, double s, double t, double u);
@@ -59,6 +60,9 @@ private:
     // GeomNode -> [[default_vertex_world_space, default_vertex_object_space]]
     typedef pvector<pvector<LPoint3f>> __internal_default_vertices_pos;
     pmap<PT(GeomNode), __internal_default_vertices_pos> _default_vertex_ws_os; // Default vertex, default object space vertex.
+
+    // Lookup Table for binomial_coeff(n,v).
+    std::vector<std::vector<int>> _v_n_comb_table;
 
     ObjectHandles* _object_handles;
     pvector<int> _selected_points;

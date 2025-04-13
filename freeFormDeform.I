@@ -12,6 +12,7 @@ inline FreeFormDeform::~FreeFormDeform() {
 */
 inline void FreeFormDeform::set_edge_spans(int x, int y, int z) {
     _lattice->set_edge_spans(x, y, z);
+    populate_lookup_table();
 }
 
 /*
@@ -26,6 +27,6 @@ inline int FreeFormDeform::binomial_coeff(int n, int k) {
 * Simple implementation of the Berstein basis polynomial.
 * https://en.wikipedia.org/wiki/Bernstein_polynomial#Bernstein_basis_polynomials
 */
-inline double FreeFormDeform::bernstein(double v, double n, double x) {
-    return binomial_coeff(n, v) * pow(x, v) * pow(1 - x, n - v);
+inline double FreeFormDeform::bernstein(double v, int i, double n, double x) {
+    return _v_n_comb_table[i][v] * pow(x, v) * pow(1 - x, n - v);
 }
