@@ -166,22 +166,6 @@ void ObjectHandles::rebuild() {
     }
 }
 
-/*
-    
-*/
-LPoint2f ObjectHandles::get_screen_space_origin(LPoint3f origin, LMatrix4 &proj_mat) {
-    LPoint3f point_3d = _camera_np.get_relative_point(*this, origin);
-
-    // From: tarsierpi on p3d forums:
-    LVecBase4f point_cam_2d = proj_mat.xform(LVecBase4f(point_3d[0], point_3d[1], point_3d[2], 1.0));
-    double point_cam_2d_3 = 1.0 / point_cam_2d[3];
-
-    return LPoint2f(
-        point_cam_2d[0] * point_cam_2d_3,
-        point_cam_2d[1] * point_cam_2d_3
-    );
-}
-
 AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* args) {
     // Args is the ObjectHandles instance.
     ObjectHandles* o_handle = (ObjectHandles*)args;
@@ -209,7 +193,7 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
     mouse_xy = o_handle->_mouse_watcher->get_mouse();
 
     // Get the origin of the handles in screen space.
-    origin_2d = o_handle->get_screen_space_origin(LPoint3f(0.0001), proj_mat);
+    origin_2d = o_handle->convert_to_2d_space(*o_handle->_control_node, LPoint3f(0.0001), proj_mat);
 
     // We're going to map the axis point from render -> render2d. This will allow us to
     // test it against the mouse coordinates instead of doing a collision test.
@@ -230,7 +214,7 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
         // Reset color:
         axis_np.set_color_scale(color);
 
-        point_2d = o_handle->convert_to_2d_space(axis_np, origin, proj_mat, mouse_xy);
+        point_2d = o_handle->convert_to_2d_space(axis_np, origin, proj_mat);
 
         // Distance between end of line segment to the origin.
         full_segment_dist = (point_2d - origin_2d).length();
@@ -260,7 +244,7 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
     for (NodePath& plane_np : o_handle->_axis_plane_nps) {
         // For these..we can check the distance. It'll be a little off since it's circular, but we can accept that.
         // We can't do a traditional plane intersection unless there's somewhere in Plane to make its area finite.
-        point_2d = o_handle->convert_to_2d_space(plane_np, LPoint3(0), proj_mat, mouse_xy);
+        point_2d = o_handle->convert_to_2d_space(plane_np, LPoint3(0), proj_mat);
 
         // Distance from the plane_np to the mouse.
         distance = (point_2d - mouse_xy).length();
@@ -311,7 +295,7 @@ void ObjectHandles::update_scale(LMatrix4 &proj_mat) {
 /*
 Object 3D -> 2D Space conversion.
 */
-LPoint2f ObjectHandles::convert_to_2d_space(NodePath& np, LPoint3f& origin, LMatrix4& proj_mat, LPoint2f& mouse_xy) {
+LPoint2f ObjectHandles::convert_to_2d_space(NodePath& np, LPoint3f& origin, LMatrix4& proj_mat) {
     LPoint3f point_3d;
 
     // Object -> Camera Space

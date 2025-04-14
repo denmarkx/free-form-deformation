@@ -53,8 +53,7 @@ private:
     static void handle_click(const Event* event, void* args);
     static void handle_drag_done(const Event* event, void* args);
 
-    LPoint2f get_screen_space_origin(LPoint3f origin, LMatrix4 &proj_mat);
-    LPoint2f convert_to_2d_space(NodePath& np, LPoint3f& origin, LMatrix4& proj_mat, LPoint2f& mouse_xy);
+    LPoint2f convert_to_2d_space(NodePath& np, LPoint3f& origin, LMatrix4& proj_mat);
     NodePath create_plane_np(LPoint3f pos, LPoint3f hpr, LColor color, AxisType axis_type);
 
     void rebuild();
