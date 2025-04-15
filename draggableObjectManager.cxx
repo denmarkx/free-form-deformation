@@ -5,16 +5,17 @@ DraggableObjectManager* DraggableObjectManager::_global_ptr = nullptr;
 DraggableObjectManager::DraggableObjectManager() {}
 
 /*
-Initializes everything for the DraggableObjectManager.
-parent (normally rendere) is what the CollisionTraverser
-eventually calls traverse on every click.
+* Initializes everything for the DraggableObjectManager.
+* parent (normally rendere) is what the CollisionTraverser
+* eventually calls traverse on every click.
 */
 DraggableObjectManager::DraggableObjectManager(NodePath& parent, NodePath& camera_np, NodePath& mouse_np) {
     setup_nodes(parent, camera_np, mouse_np);
 }
 
 /*
-
+* Deconstructor for DraggableObjectManager.
+* Removes the drag task, click event, deselects everything, and other cleanup.
 */
 DraggableObjectManager::~DraggableObjectManager() {
     // Stop our Drag Task:
@@ -36,7 +37,7 @@ DraggableObjectManager::~DraggableObjectManager() {
 }
 
 /*
-Sets the parent, camera, and mouse and its underlying nodes.
+* Sets the parent, camera, and mouse and its underlying nodes.
 */
 void DraggableObjectManager::setup_nodes(NodePath& parent, NodePath& camera_np, NodePath& mouse_np) {
     _parent = parent;
@@ -48,7 +49,7 @@ void DraggableObjectManager::setup_nodes(NodePath& parent, NodePath& camera_np, 
 }
 
 /*
-Registers object with the manager.
+* Registers object with the manager.
 */
 void DraggableObjectManager::register_object(DraggableObject& draggable) {
     // Ignore if already registered.
@@ -64,7 +65,7 @@ void DraggableObjectManager::register_object(DraggableObject& draggable) {
 }
 
 /*
-Sets up the traverser, handler, and ray.
+* Sets up the traverser, handler, and ray.
 */
 void DraggableObjectManager::setup_picking_objects() {
     // Setup CollisionTraverser:
@@ -97,7 +98,8 @@ void DraggableObjectManager::setup_picking_objects() {
 }
 
 /*
-
+* Called whenever user clicks with button passed from setup_mouse.
+* Sets data of ObjectHandles depending on if anything was found.
 */
 void DraggableObjectManager::click() {
     _collision_ray->set_from_lens(
@@ -209,6 +211,7 @@ void DraggableObjectManager::click() {
 
 
 /*
+* Deselects all DraggableObjects and stops the ObjectHandles.
 */
 void DraggableObjectManager::deselect_all() {
     // Run deselect on all our managed nodes:
@@ -221,8 +224,8 @@ void DraggableObjectManager::deselect_all() {
 }
 
 /*
-The function that gets called when the event assigned to
-setup_mouse(x) is triggered.
+* The function that gets called when the event assigned to
+* setup_mouse(x) is triggered.
 */
 static void handle_mouse_click(const Event* e, void* args) {
     DraggableObjectManager* dom = (DraggableObjectManager*)args;
@@ -236,11 +239,11 @@ static void handle_mouse_click(const Event* e, void* args) {
 }
 
 /*
-Task that executes whenever we are dragging the mouse whilst the event
-assigned to setup_mouse(x) is called.
-
-The point of this is to shoot off an event to the DraggableObject if they're listening.
-We don't do this from the ObjectHandler for simplicity.
+* Task that executes whenever we are dragging the mouse whilst the event
+* assigned to setup_mouse(x) is called.
+* 
+* The point of this is to shoot off an event to the DraggableObject if they're listening.
+* We don't do this from the ObjectHandler for simplicity.
 */
 static AsyncTask::DoneStatus drag_task(GenericAsyncTask *task, void* args) {
     DraggableObjectManager* dom = (DraggableObjectManager*)args;
@@ -266,7 +269,7 @@ static AsyncTask::DoneStatus drag_task(GenericAsyncTask *task, void* args) {
 }
 
 /*
-Setups the bind and dragging task for the mouse.
+* Setups the bind and dragging task for the mouse.
 */
 void DraggableObjectManager::setup_mouse(std::string click_button) {
     event_handler->add_hook(click_button, handle_mouse_click, this);
@@ -277,7 +280,7 @@ void DraggableObjectManager::setup_mouse(std::string click_button) {
 }
 
 /*
-
+* Global pointer to DraggableObjectManager. Will initialize if not found.
 */
 DraggableObjectManager* DraggableObjectManager::get_global_ptr() {
     if (_global_ptr == nullptr) {

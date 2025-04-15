@@ -1,6 +1,10 @@
 #include "lattice.h"
 #include "lineSegs_ext.h"
 
+/*
+* Completely erases and rebuilds all control points and edges.
+* Automatically calls watch_node_path for Lattice recursively traversing down by 2.
+*/
 void Lattice::rebuild() {
     CPT(BoundingSphere) b_sphere = _np.get_bounds()->as_bounding_sphere();
     const double radius = b_sphere->get_radius();
@@ -12,6 +16,10 @@ void Lattice::rebuild() {
     watch_node_path(*this, 2);
 }
 
+/*
+* Determines the amount and placement of control points.
+* Implicitly calls reset_control_points.
+*/
 void Lattice::create_control_points(const double radius) {
     reset_control_points();
 
@@ -33,10 +41,17 @@ void Lattice::create_control_points(const double radius) {
     _dom->register_object(*this);
 }
 
+/*
+* Pushes <num_segments> to point_to_edge_vertex[index].
+*/
 void Lattice::push_point_edge(int index) {
     point_to_edge_vertex[index].push_back(num_segments);
 }
 
+/*
+* Creates a two-way relationship between the given index and adjacent_index where
+* these indices represent control points.
+*/
 void Lattice::push_point_relationship(int index, int adjacent_index) {
     // Add the adjacent index to the regular vector.
     point_map[index].push_back(adjacent_index);
@@ -79,6 +94,16 @@ void Lattice::push_point_relationship(int index, int adjacent_index) {
     }
 }
 
+/*
+* Primary function for creating the visible edges (_edgeNp) using line segments.
+* Creates CollisionCapsules around these segments due to us not being able to click
+* them by normal means (see: lineSegs_ext.cxx.)
+* 
+* Internally keeps track of the number of back and forth segments (num_segments)
+* which is actually what LineSegs does. We do it here because LineSegs has it private.
+* 
+* Implicitly calls reset_edges.
+*/
 void Lattice::create_edges() {
     reset_edges();
 
@@ -221,7 +246,7 @@ void Lattice::create_edges() {
 }
 
 /*
-Updates the adjacent edges to match the given control point.
+* Updates the adjacent edges to match the given control point.
 */
 
 void Lattice::update_edges(int index) {
@@ -239,6 +264,10 @@ void Lattice::update_edges(int index) {
     LINESEGS_EXT::update_lines(_edges, _edgesNp);
 }
 
+/*
+* Completely resets all maps, vectors, and variables related to edges.
+* Removes _edgesNp and resets the LineSegs instance.
+*/
 void Lattice::reset_edges() {
     _edgesNp.remove_node();
     _edges.reset();
@@ -248,6 +277,10 @@ void Lattice::reset_edges() {
     num_segments = -1;
 }
 
+/*
+* Completely resets all maps and vectors related to control points.
+* Removes the point node.
+*/
 void Lattice::reset_control_points() {
     for (NodePath& c_point : _control_points) {
         c_point.remove_node();
@@ -256,6 +289,12 @@ void Lattice::reset_control_points() {
     _point_ijk_map.clear();
 }
 
+/*
+* Function to create a point as <point> where its scale is multiplied by radius (from BoundingSphere).
+* i, j, k correspond to the literal values mentioned in Sederberg/Parry paper.
+*
+* Control point is tagged with "control_point" tag with a value of its index.
+*/
 void Lattice::create_point(LPoint3f point, const double radius, int i, int j, int k) {
     PT(PandaNode) p_node = _loader->load_sync("misc/sphere");
     NodePath c_point = this->attach_new_node(p_node);
@@ -269,6 +308,10 @@ void Lattice::create_point(LPoint3f point, const double radius, int i, int j, in
     _point_ijk_map[_control_points.size() - 1] = std::vector<int>{ i, j, k };
 }
 
+/*
+* Sets the edge spans to the given x, y, z.
+* Rebuilds Lattice automatically.
+*/
 void Lattice::set_edge_spans(int size_x, int size_y, int size_z) {
     _plane_spans.clear();
     _plane_spans.push_back(size_x);
@@ -277,6 +320,15 @@ void Lattice::set_edge_spans(int size_x, int size_y, int size_z) {
     rebuild();
 }
 
+/*
+* Calculates the S,T,U for the lattice. This is done by calling
+* calc_tight_bounds on, initially the given NodePath. Subsequent calls
+* will instead be getting the tight bounds on the edgesNp.
+* 
+* This is so we can properly set our control points without actually parenting
+* them to something. It also is a workaround a "jerky" motion the control points
+* will do at times.
+*/
 void Lattice::calculate_lattice_vec() {
     _lattice_vecs.clear();
     if (!initial_bounds_capture) {
@@ -310,8 +362,8 @@ void Lattice::calculate_lattice_vec() {
 }
 
 /*
-Returns boolean representing if the given point is
-between the Lattice's bounds (x_min, x_max).
+* Returns boolean representing if the given point is
+* between the Lattice's bounds (x_min, x_max).
 */
 bool Lattice::point_in_range(LPoint3f &point) {
     LVector3f x_min = get_x0();
@@ -342,6 +394,7 @@ void Lattice::select(NodePath& np) {
     // Push to _selected_control_points:
     _selected_control_points.push_back(std::stoi(np.get_net_tag("control_point")));
 }
+
 /*
 * Inherits DraggableObject::deselect, updates internal tracking
 * of deselected control point indices.

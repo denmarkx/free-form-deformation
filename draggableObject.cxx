@@ -2,22 +2,22 @@
 #include "draggableObjectManager.h"
 
 /*
-Initializer for DraggableObject. Parent is the top level NodePath of the object(s)
-wanting to be apart of the draggable object. traverse_num is how far down
-we traverse the children.
-
-For example, if traverse_num==0: we only will pay attention to parent. However, if parent is just
-a holding node, i.e. empty, this is useless.
-
-If traverse_num == 2, we will watch all our children (1) and all their children (2).
+* Initializer for DraggableObject. Parent is the top level NodePath of the object(s)
+* wanting to be apart of the draggable object. traverse_num is how far down
+* we traverse the children.
+* 
+* For example, if traverse_num==0: we only will pay attention to parent. However, if parent is just
+* a holding node, i.e. empty, this is useless.
+* 
+* If traverse_num == 2, we will watch all our children (1) and all their children (2).
 */
 DraggableObject::DraggableObject(NodePath& parent, int traverse_num) {
     watch_node_path(parent, traverse_num);
 }
 
 /*
-Initializer for DraggableObject. Watches for all nodes with the given tag name set via setTag.
-parent is the highest level node for which we seek tag. Pass render if nothing else.
+* Initializer for DraggableObject. Watches for all nodes with the given tag name set via setTag.
+* parent is the highest level node for which we seek tag. Pass render if nothing else.
 */
 
 DraggableObject::DraggableObject(NodePath& parent, std::string tag) {
@@ -26,13 +26,13 @@ DraggableObject::DraggableObject(NodePath& parent, std::string tag) {
 }
 
 /*
-Blank initializer for DraggableObject. This is usually for when we want to set
-the nodepath later on.
+* Blank initializer for DraggableObject. This is usually for when we want to set
+* the nodepath later on.
 */
 DraggableObject::DraggableObject() {}
 
 /*
-
+* Deconstructor for DraggableObject. Removes all events we started.
 */
 DraggableObject::~DraggableObject() {
     EventHandler* event_handler = EventHandler::get_global_event_handler();
@@ -40,7 +40,10 @@ DraggableObject::~DraggableObject() {
 }
 
 /*
-
+* Watches the parent as well as traverses through each of
+* the children <traverse_num> of times.
+*
+* This function will clear previously watched nodes.
 */
 void DraggableObject::watch_node_path(NodePath& parent, int traverse_num) {
     _nodes.clear();
@@ -51,9 +54,9 @@ void DraggableObject::watch_node_path(NodePath& parent, int traverse_num) {
 }
 
 /*
-Returns boolean indicating if the given np is managed by this draggable.
-This will only ever return true if DraggableObject was initialized via
-DraggableObject(parent, traverse_num) or if watch_node_path was called.
+* Returns boolean indicating if the given np is managed by this draggable.
+* This will only ever return true if DraggableObject was initialized via
+* DraggableObject(parent, traverse_num) or if watch_node_path was called.
 */
 bool DraggableObject::has_node(NodePath& np) {
     for (NodePath& other : _nodes) {
@@ -73,8 +76,8 @@ bool DraggableObject::has_node(NodePath& np) {
 }
 
 /*
-Only called when DraggableObject is given a parent and a traverse num.
-Keeps an internal list of  the children to make matching easier for the DOM.
+* Only called when DraggableObject is given a parent and a traverse num.
+* Keeps an internal list of  the children to make matching easier for the DOM.
 */
 void DraggableObject::traverse() {
      // If traverse_num is 0, we just want the parent.
@@ -88,9 +91,9 @@ void DraggableObject::traverse() {
 }
 
 /*
-Recursively traverses children and pushes to _nodes vector.
-count indicates the current traversal cycle of a single node.
-Stops for each child when count == the given traverse num from init. 
+* Recursively traverses children and pushes to _nodes vector.
+* count indicates the current traversal cycle of a single node.
+* Stops for each child when count == the given traverse num from init. 
 */
 void DraggableObject::traverse_children(NodePathCollection& children, int count) {
     // Iterate through children.
@@ -109,14 +112,14 @@ void DraggableObject::traverse_children(NodePathCollection& children, int count)
 }
 
 /*
-Returns vector of NodePaths representing the selected objects.
+* Returns vector of NodePaths representing the selected objects.
 */
 pvector<NodePath> DraggableObject::get_selected() {
     return _selected;
 }
 
 /*
-Object has been selected. Children may inherit for additional functionality.
+* Object has been selected. Children may inherit for additional functionality.
 */
 void DraggableObject::select(NodePath& np) {
     np.set_color(0, 1, 0, 1);
@@ -124,7 +127,7 @@ void DraggableObject::select(NodePath& np) {
 }
 
 /*
-Object has been deselected. Children may inherit for additional functionality.
+* Object has been deselected. Children may inherit for additional functionality.
 */
 void DraggableObject::deselect(NodePath& np) {
     np.clear_color();
@@ -142,11 +145,11 @@ void DraggableObject::deselect(NodePath& np) {
 }
 
 /*
-Object and all managed children has been deselected. Internally calls
-deselect(NodePath) for each node in the registered nodes vector.
-
-If DraggableObject was initialized via a tag, traverses the scenegraph at the parent
-and calls deselect(NodePath) on all nodes that had the tag.
+* Object and all managed children has been deselected. Internally calls
+* deselect(NodePath) for each node in the registered nodes vector.
+* 
+* If DraggableObject was initialized via a tag, traverses the scenegraph at the parent
+* and calls deselect(NodePath) on all nodes that had the tag.
 */
 void DraggableObject::deselect() {
     // Where DraggableObject(NodePath)
@@ -157,7 +160,9 @@ void DraggableObject::deselect() {
 }
 
 /*
-
+* Accepts the given event name and a callback function.
+* While semi-equivalent to base.accept(<event>, <function>), this function
+* will also register the event with the DraggableObjectManager.
 */
 void DraggableObject::hook_drag_event(std::string event_name, EventHandler::EventCallbackFunction function, void* args) {
     EventHandler *event_handler = EventHandler::get_global_event_handler();
@@ -168,22 +173,22 @@ void DraggableObject::hook_drag_event(std::string event_name, EventHandler::Even
 }
 
 /*
-
+* Returns the event name sent by hook_drag_event.
 */
 std::string DraggableObject::get_event_name() const {
     return _event_name;
 }
 
 /*
-Returns boolean representing if we were set via DraggableObject(string tag) or not.
-i.e. if tag is "".
+* Returns boolean representing if we were set via DraggableObject(string tag) or not.
+* i.e. if tag is "".
 */
 bool DraggableObject::is_watching_tag() const {
     return _tag != "";
 }
 
 /*
-Returns tag set by DraggableObject(string tag).
+* Returns tag set by DraggableObject(string tag).
 */
 std::string DraggableObject::get_tag() const {
     return _tag;

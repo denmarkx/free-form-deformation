@@ -10,9 +10,9 @@
 #include "collisionNode.h"
 
 /*
-    Creates a collision capsule from vn -> vn+1 given a created LineSegs instance
-    and the NodePath returned from attaching it elsewhere. Capsules are
-    parented to the lineNP.
+* Creates a collision capsule from vn -> vn+1 given a created LineSegs instance
+* and the NodePath returned from attaching it elsewhere. Capsules are
+* parented to the lineNP.
 */
 NodePath LINESEGS_EXT::process_lines(LineSegs& line, NodePath& lineNP) {
     LPoint3f prev_vertex, vertex;
@@ -41,7 +41,7 @@ NodePath LINESEGS_EXT::process_lines(LineSegs& line, NodePath& lineNP) {
 }
 
 /*
-    Modifies the collision capsule to whatever vn -> vn+1 for the given LineSegs.
+* Modifies the collision capsule to whatever vn -> vn+1 for the given LineSegs.
 */
 void LINESEGS_EXT::update_lines(LineSegs& line, NodePath& lineNP) {
     LPoint3f prev_vertex, vertex;

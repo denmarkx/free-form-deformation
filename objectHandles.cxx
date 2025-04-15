@@ -1,5 +1,9 @@
 #include "objectHandles.h"
 
+/*
+* Initializer for ObjectHandles. If this is for future reference, the first argument <np>
+* may be an empty NodePath.
+*/
 ObjectHandles::ObjectHandles(NodePath &np, NodePath mouse_np, NodePath camera_np, Camera *camera) : NodePath("ObjectHandles") {
     set_active(false);
 
@@ -33,6 +37,10 @@ ObjectHandles::ObjectHandles(NodePath &np, NodePath mouse_np, NodePath camera_np
     set_bin("fixed", 1, 1);
 }
 
+/*
+* Deconstructor for ObjectHandles. Removes Drag and Mouse task.
+* Ignores all events that we receive. Calls cleanup.
+*/
 ObjectHandles::~ObjectHandles() {
     cleanup();
 
@@ -57,6 +65,9 @@ ObjectHandles::~ObjectHandles() {
     event_handler->remove_hooks_with(this);
 }
 
+/*
+* Detaches all managed NodePaths, general cleanup.
+*/
 void ObjectHandles::cleanup() {
     // Detach _np_obj_node's children:
     for (size_t i = 0; i < _np_obj_node->get_num_children(); i++) {
@@ -74,6 +85,10 @@ void ObjectHandles::cleanup() {
     remove_node();
 }
 
+/*
+* Uses CardMaker to create planes. Each returned plane is tagged with an "axis" tag
+* whose value is <axis_type> for future picker determination.
+*/
 NodePath ObjectHandles::create_plane_np(LPoint3f pos, LPoint3f hpr, LColor color, AxisType axis_type) {
     // CardMaker is for visualization:
     CardMaker cm = CardMaker("axis_plane");
@@ -92,6 +107,9 @@ NodePath ObjectHandles::create_plane_np(LPoint3f pos, LPoint3f hpr, LColor color
 
 }
 
+/*
+* Completely rebuilds all axis planes and lines.
+*/
 void ObjectHandles::rebuild() {
     // Reset everything active:
     _hover_line_np = NodePath();
@@ -166,6 +184,10 @@ void ObjectHandles::rebuild() {
     }
 }
 
+/*
+* Task that manages all operations which determine if a plane or line axis
+* is being hovered over or not.
+*/
 AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* args) {
     // Args is the ObjectHandles instance.
     ObjectHandles* o_handle = (ObjectHandles*)args;
@@ -278,7 +300,7 @@ AsyncTask::DoneStatus ObjectHandles::mouse_task(GenericAsyncTask* task, void* ar
 }
 
 /*
-Updates the scale of the object handle based on the camera.
+* Updates the scale of the object handle based on the camera.
 */
 void ObjectHandles::update_scale(LMatrix4 &proj_mat) {
     // Ignore if we're not active.
@@ -293,7 +315,7 @@ void ObjectHandles::update_scale(LMatrix4 &proj_mat) {
 }
 
 /*
-Object 3D -> 2D Space conversion.
+* Object 3D -> Screen Space conversion.
 */
 LPoint2f ObjectHandles::convert_to_2d_space(NodePath& np, LPoint3f& origin, LMatrix4& proj_mat) {
     LPoint3f point_3d;
@@ -313,6 +335,9 @@ LPoint2f ObjectHandles::convert_to_2d_space(NodePath& np, LPoint3f& origin, LMat
     );
 }
 
+/*
+* Task which manages all operations related to dragging an axis.
+*/
 AsyncTask::DoneStatus ObjectHandles::mouse_drag_task(GenericAsyncTask* task, void* args) {
     // Args is ObjectHandles instance.
     ObjectHandles* o_handle = (ObjectHandles*)(args);
@@ -389,6 +414,10 @@ AsyncTask::DoneStatus ObjectHandles::mouse_drag_task(GenericAsyncTask* task, voi
     return AsyncTask::DS_cont;
 }
 
+/*
+* Gets called when our mouse-up event gets dispatched. Handles
+* the soft reset of color, camera, and position changes.
+*/
 void ObjectHandles::handle_drag_done(const Event* event, void* args) {
     // Args is ObjectHandles instance.
     ObjectHandles* o_handle = (ObjectHandles*)(args);
@@ -413,6 +442,9 @@ void ObjectHandles::handle_drag_done(const Event* event, void* args) {
     o_handle->previous_pos3d = LPoint3f::zero();
 }
 
+/*
+* Event that gets called when the mouse click button gets dispatched.
+*/
 void ObjectHandles::handle_click(const Event* event, void* args) {
     // Args is ObjectHandles instance.
     ObjectHandles* o_handle = (ObjectHandles*)(args);
@@ -446,6 +478,9 @@ void ObjectHandles::handle_click(const Event* event, void* args) {
 
 }
 
+/*
+* Sets up the mouse hover task, click, and click-up event.
+*/
 void ObjectHandles::setup_mouse_watcher() {
     AsyncTaskManager* task_mgr = AsyncTaskManager::get_global_ptr();
     
@@ -462,7 +497,7 @@ void ObjectHandles::setup_mouse_watcher() {
 }
 
 /*
-Disables mouse movement of the camera.
+* Disables mouse movement of the camera.
 */
 void ObjectHandles::disable_camera_movement() {
     NodePath first_child = _mouse_np.get_child(0);
@@ -478,7 +513,7 @@ void ObjectHandles::disable_camera_movement() {
 }
 
 /*
-Enables mouse movement of the camera.
+* Enables mouse movement of the camera.
 */
 void ObjectHandles::enable_camera_movement() {
     // Ignore redundant calls:
@@ -490,8 +525,8 @@ void ObjectHandles::enable_camera_movement() {
 }
 
 /*
-Adds NodePath to be tracked with object handles.
-Will not add if given np is empty.
+* Adds NodePath to be tracked with object handles.
+* Will not add if given np is empty.
 */
 void ObjectHandles::add_node_path(NodePath &np) {
     if (np.is_empty()) {
@@ -516,7 +551,7 @@ void ObjectHandles::add_node_path(NodePath &np) {
 }
 
 /*
-Removes singular, tracked NodePath.
+* Removes singular, tracked NodePath.
 */
 void ObjectHandles::remove_node_path(NodePath& np) {
     // We don't manage you?
@@ -543,7 +578,7 @@ void ObjectHandles::remove_node_path(NodePath& np) {
 }
 
 /*
-Removes all tracked NodePaths.
+* Removes all tracked NodePaths.
 */
 void ObjectHandles::clear_node_paths() {
     // Reparent our children back to their original parent nodes.

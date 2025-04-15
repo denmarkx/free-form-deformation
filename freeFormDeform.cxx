@@ -1,6 +1,11 @@
 #include "freeFormDeform.h"
 #include <unordered_set>
 
+/*
+* Initializer for FreeFormDeform. NodePath is the object wanting to deform.
+* Automatically contructs the Lattice and calls hook_drag_event on it
+* with an internal FFD_DRAG_EVENT event.
+*/
 FreeFormDeform::FreeFormDeform(NodePath np, NodePath render) {
     _np = np;
     _geom_node_collection = _np.find_all_matches("**/+GeomNode");
@@ -32,12 +37,22 @@ void FreeFormDeform::populate_lookup_table() {
     }
 }
 
+/*
+* The drag event for which we hook Lattice onto.
+*
+* If you wish to move the main NodePath (given in initializer),
+* you will have to make it a DraggableObject and hook a new drag event
+* to this callback function.
+*/
 void FreeFormDeform::handle_drag(const Event* e, void* args) {
     FreeFormDeform* ffd = (FreeFormDeform*)args;
     ffd->process_node();
     ffd->update_vertices(e->get_name() != "FFD_DRAG_EVENT");
 }
 
+/*
+* Simple recursive implementation for factorial.
+*/
 double FreeFormDeform::factorial(double n) {
     if (n == 0) {
         return 1;
@@ -46,7 +61,7 @@ double FreeFormDeform::factorial(double n) {
 }
 
 /*
-Returns the actual index of the control point given i, j, k.
+* Returns the actual index of the control point given i, j, k.
 */
 int FreeFormDeform::get_point_index(int i, int j, int k) {
     std::vector<int>& spans = _lattice->get_edge_spans();
@@ -55,7 +70,8 @@ int FreeFormDeform::get_point_index(int i, int j, int k) {
 
 
 /*
-Returns true/false if the given control point influences the given vertex (stu).
+* Returns true/false if the given control point influences the given vertex (stu).
+* The berstein polynomial (for all ijk and spans and stu), will return 0 if there's no influence.
 */
 bool FreeFormDeform::is_influenced(int index, LVector3f stu) {
     std::vector<int>& spans = _lattice->get_edge_spans();
@@ -64,7 +80,7 @@ bool FreeFormDeform::is_influenced(int index, LVector3f stu) {
 }
 
 /*
-
+* Resets all vertices of the given <data> that are not influenced by any control point.
 */
 void FreeFormDeform::reset_vertices(GeomVertexData* data, GeomNode* geom_node, std::vector<int>& indices) {
     if (_non_influenced_vertex.find(geom_node) == _non_influenced_vertex.end()) {
@@ -76,7 +92,8 @@ void FreeFormDeform::reset_vertices(GeomVertexData* data, GeomNode* geom_node, s
     
     // Now, we want to iterate through vertices that are NOT affected at all.
     int vertex_count = 0;
- 
+
+    // Iterate and set to the previous default space we got from calling process_node for the first time.
     for (size_t i = 0; i < _non_influenced_vertex[geom_node].size(); i++) {
         int t = _non_influenced_vertex[geom_node][i];
         rewriter.set_row(t);
@@ -86,6 +103,7 @@ void FreeFormDeform::reset_vertices(GeomVertexData* data, GeomNode* geom_node, s
 }
 
 /*
+* Deforms all vertices within <data> that are influenced without regard for control point information.
 */
 void FreeFormDeform::transform_all_influenced(GeomVertexData* data, GeomNode* geom_node) {
     GeomVertexWriter rewriter(data, "vertex");
@@ -98,6 +116,9 @@ void FreeFormDeform::transform_all_influenced(GeomVertexData* data, GeomNode* ge
 
     std::unordered_set<int> _vertices2;
 
+    // Our vertex can be controlled by multiple points.
+    // For this reason, we need to remove any duplicates
+    // so we're not doing unnecessary processing.
     int vertex = 0;
     for (int i = 0; i < influence_map.size(); i++) {
         vertices = influence_map[i];
@@ -107,6 +128,7 @@ void FreeFormDeform::transform_all_influenced(GeomVertexData* data, GeomNode* ge
         }
     }
 
+    // Iterate through duplicates and deform.
     for (const int& vertex : _vertices2) {
         rewriter.set_row(vertex);
 
@@ -121,12 +143,16 @@ void FreeFormDeform::transform_all_influenced(GeomVertexData* data, GeomNode* ge
     }
 }
 
+/*
+* Deforms all vertices that are being influenced by the given control points.
+*/
 void FreeFormDeform::transform_vertex(GeomVertexData* data, GeomNode* geom_node, std::vector<int>& control_points) {
     GeomVertexWriter rewriter(data, "vertex");
 
     LPoint3f default_vertex, default_object_space; // (stu)
     LVector3f x_ffd;
 
+    // Check who is being influenced by control points.
     std::unordered_set<int> vertices;
     for (size_t i = 0; i < control_points.size(); i++) {
         pvector<int>& influenced_arrays = _influenced_vertices[geom_node][i];
@@ -153,11 +179,19 @@ void FreeFormDeform::transform_vertex(GeomVertexData* data, GeomNode* geom_node,
     }
 }
 
+/*
+* Primary deformation function. Parameters s, t, u are the
+* default vertex position previously calculated in process_node.
+*/
 LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
     std::vector<int>& spans = _lattice->get_edge_spans();
 
     double bernstein_coeff;
     int p_index = 0;
+
+    // For nesting together all i, j, k between and including their respective spans (l, m, n)
+    // Will call the berstein polynomial on the lowest and begin performing an
+    // scaled multiply operation backwards.
 
     LVector3f vec_i = LVector3f(0);
     for (int i = 0; i <= spans[0]; i++) {
@@ -181,6 +215,16 @@ LVector3f FreeFormDeform::deform_vertex(double s, double t, double u) {
     return vec_i;
 }
 
+/*
+* Internally calls transform_all_influenced or transform_vertex.
+* Will always call reset_vertices afterwards.
+* 
+* <force> argument is for when we are selecting the actual NodePath and not
+* any control points. In this case, it will transform all influenced vertices
+* to account for going in and out of the bounds of the lattice.
+* 
+* Calls lattice->update_edges.
+*/
 void FreeFormDeform::update_vertices(bool force) {
     std::vector<int> &control_point_indices = _lattice->get_selected_control_points();
 
@@ -214,6 +258,15 @@ void FreeFormDeform::update_vertices(bool force) {
 }
 
 /*
+* Primary node and vertex processing function.
+* 
+* Reads each Geom's vertex data. Initially, it captures the default vertex position.
+* This vertex position is relative to itself, so the NodePath can always be manipulated
+* before and after.
+*
+* - Determines if a vertex is within the bounds of the Lattice or not.
+* - Converts all vertices to s,t,u space. 
+* - Creates influence relationship between vertex and control point.
 */
 void FreeFormDeform::process_node() {
     // Ignore if there's nothing.
