@@ -131,7 +131,6 @@ void FreeFormDeform::transform_all_influenced(GeomVertexData* data, GeomNode* ge
     // Iterate through duplicates and deform.
     for (const int& vertex : _vertices2) {
         rewriter.set_row(vertex);
-
         default_vertex_pos = _default_vertex_ws_os[geom_node][vertex];
         default_vertex = default_vertex_pos[0];
         double s = default_vertex_pos[1][0];
@@ -162,9 +161,7 @@ void FreeFormDeform::transform_vertex(GeomVertexData* data, GeomNode* geom_node,
     }
     pvector<LPoint3f> default_vertex_pos;
 
-    int vertex = 0;
-    for (int i = 0; i < vertices.size(); i++) {
-        vertex = *vertices.find(i);
+    for (const int& vertex : vertices) {
         default_vertex_pos = _default_vertex_ws_os[geom_node][vertex];
 
         rewriter.set_row(vertex);
