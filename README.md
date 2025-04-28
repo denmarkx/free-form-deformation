@@ -7,7 +7,7 @@ Primary FFD implementation is located within `freeFormDeform.cxx` and `lattice.c
 Neighboring modules such as the `DraggableObjectManager`, `ObjectHandles`, and `LineSegs_ext` are strictly used and integrated for the purpose of visualization.
 
 ## Literature Review
-**Scott Perry's Thesis:**
+**Scott Parry's Thesis:**
 > [_Free-Form Deformations in a Constructive Solid Geometry Modeling System_](https://scholarsarchive.byu.edu/cgi/viewcontent.cgi?params=/context/etd/article/5254/&path_info=Scott_Parry_from_IR_problem_children.pdf)
 
 **Sederberg and Parry's SIGGRAPH 1986 paper:**
