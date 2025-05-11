@@ -331,6 +331,7 @@ void Lattice::set_edge_spans(int size_x, int size_y, int size_z) {
 */
 void Lattice::calculate_lattice_vec() {
     _lattice_vecs.clear();
+    LPoint3f delta(0.0);
     if (!initial_bounds_capture) {
         _np.calc_tight_bounds(_x0, _x1);
         initial_bounds_capture = true;
@@ -338,15 +339,14 @@ void Lattice::calculate_lattice_vec() {
     else {
         _edgesNp.calc_tight_bounds(_x0, _x1, _np.get_top());
         _edgesNp.show_tight_bounds();
-    }
 
-    LPoint3f delta = _edgesNp.get_pos(_np.get_top()) - _edge_pos;
+        delta = _edgesNp.get_pos(_np.get_top()) - _edge_pos;
+        _edge_pos = _edgesNp.get_pos(_np.get_top());
+    }
 
     for (NodePath& cp : _control_points) {
         cp.set_pos(cp.get_pos() + delta);
     }
-
-    _edge_pos = _edgesNp.get_pos(_np.get_top());
 
     double size_s = _x1[0] - _x0[0];
     double size_t = _x1[2] - _x0[2];
