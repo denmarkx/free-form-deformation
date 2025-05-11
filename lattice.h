@@ -31,7 +31,7 @@ public:
     inline int get_num_control_points();
     inline std::vector<int>& get_selected_control_points();
 
-    bool point_in_range(LPoint3f& point);
+    inline bool point_in_range(LPoint3f& point);
 
     inline LPoint3f get_x0() const;
     inline LPoint3f get_x1() const;
@@ -67,6 +67,8 @@ private:
     NodePath _np;
 
     LineSegs _edges;
+
+    PT(GeometricBoundingVolume) _npBoundingLarge;
 
     // control point index -> line segment index
     pmap<int, pvector<int>> point_to_edge_vertex;

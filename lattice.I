@@ -87,3 +87,13 @@ inline std::vector<int>& Lattice::get_ijk(int index) {
 inline std::vector<int>& Lattice::get_selected_control_points() {
     return _selected_control_points;
 }
+
+/*
+* Returns boolean representing if the given point is between the NodePath's bounds.
+*/
+inline bool Lattice::point_in_range(LPoint3f& point) {
+    return _npBoundingLarge->contains(point) ==
+        (BoundingVolume::IntersectionFlags::IF_possible ^
+            BoundingVolume::IntersectionFlags::IF_some ^
+            BoundingVolume::IntersectionFlags::IF_all);
+}

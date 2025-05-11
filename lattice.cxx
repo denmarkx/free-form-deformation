@@ -344,6 +344,9 @@ void Lattice::calculate_lattice_vec() {
         _edge_pos = _edgesNp.get_pos(_np.get_top());
     }
 
+    PT(BoundingVolume) large_bounds = _np.get_bounds();
+    _npBoundingLarge = DCAST(GeometricBoundingVolume, large_bounds);
+
     for (NodePath& cp : _control_points) {
         cp.set_pos(cp.get_pos() + delta);
     }
@@ -359,24 +362,6 @@ void Lattice::calculate_lattice_vec() {
     _lattice_vecs.push_back(s);
     _lattice_vecs.push_back(t);
     _lattice_vecs.push_back(u);
-}
-
-/*
-* Returns boolean representing if the given point is
-* between the Lattice's bounds (x_min, x_max).
-*/
-bool Lattice::point_in_range(LPoint3f &point) {
-    LVector3f x_min = get_x0();
-    LVector3f x_max = get_x1();
-
-    for (size_t i = 0; i < 3; i++) {
-        // There's a precision issue because tight bounds literally means tight bounds.
-        // ..hence the reason for an epsilon.
-        if (x_min[i]-0.00001 > point[i] || x_max[i]+0.00001 < point[i]) {
-            return false;
-        }
-    }
-    return true;
 }
 
 /*

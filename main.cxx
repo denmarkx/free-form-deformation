@@ -48,9 +48,6 @@ int main() {
     NodePath np = window->load_model(window->get_render(), "teapot");
     //np.flatten_strong();
 
-    ObjectHandles *oh = new ObjectHandles(NodePath(), window->get_mouse(), window->get_camera_group(), window->get_camera(0));
-    oh->set_thickness(5);
-
     FreeFormDeform* ffd = new FreeFormDeform(np, window->get_render());
 
     DraggableObjectManager* dom = DraggableObjectManager::get_global_ptr();
