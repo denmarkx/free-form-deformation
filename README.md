@@ -1,5 +1,8 @@
-# Free-Form Deformation
-An work-in-progress implementation of Thomas W. Sederberg and Scott R. Parry's Free-Form Deformation of Solid Geometric Models in Panda3D.
+# Free-Form Deformation of 3D Geometry
+Free-Form Deformation of 3D geometry at runtime within Panda3D. Softly deforms an arbitrary mesh through control points and curve approximation. This performs at runtime and does not utilize shaders.
+
+![FFD_EXMPL](https://github.com/user-attachments/assets/f60512f2-d476-43de-bb34-4f3aaf7491f7)
+
 
 ## Implementation
 Primary FFD implementation is located within `freeFormDeform.cxx` and `lattice.cxx`. 
